@@ -1,0 +1,8 @@
+# defaults file for vector.dev
+---
+vector_version: ''
+vector_config:
+  # sources:
+  # sinks:
+  # transforms:
+  # api:

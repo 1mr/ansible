@@ -1,0 +1,10 @@
+# handlers file for vector.dev
+---
+- name: "Restart vector"
+  ansible.builtin.service:
+    name: vector
+    state: restarted
+  become: true
+  listen: "restart_vector"
+  tags:
+    - vector_run

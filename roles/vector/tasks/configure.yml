@@ -1,0 +1,10 @@
+---
+- name: "Create vector configuration file"
+  ansible.builtin.template:
+    src: "vector.yaml.j2"
+    dest: "/etc/vector/vector.yaml"
+    owner: "root"
+    group: "vector"
+    mode: "0640"
+  # no_log: "{{ 'false' if lookup('env', 'CI') else 'true' }}"
+  notify: restart_vector

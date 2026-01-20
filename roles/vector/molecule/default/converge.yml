@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  become: yes
+  vars:
+    vector_data_dir: '/tmp/vector/'
+  tasks:
+    - name: 'Include vector'
+      ansible.builtin.include_role:
+        name: 'vector'

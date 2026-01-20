@@ -1,0 +1,21 @@
+---
+- name: "Prepare apt"
+  when:
+    - "ansible_facts['pkg_mgr'] == 'apt'"
+  block:
+    - name: "Import datadog apt gpg key"
+      ansible.builtin.get_url:
+        url: "https://keys.datadoghq.com/DATADOG_APT_KEY_CURRENT.public"
+        dest: /usr/share/keyrings/datadog-apt-keyring.asc
+        mode: "0644"
+    - name: "Add vector apt repository"
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/datadog-apt-keyring.asc] https://apt.vector.dev/ stable vector-0"
+        filename: vector
+        update_cache: true
+
+- name: "Install vector"
+  ansible.builtin.package:
+    name: "vector{{ (vector_version != '') | ansible.builtin.ternary('={{ vector_version }}', '') }}"
+    state: "present"
+  notify: restart_vector

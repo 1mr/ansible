@@ -1,0 +1,24 @@
+---
+namespace: 'gh_1mr'
+name: 'ansible'
+version: '0.0.0'
+readme: 'README.md'
+authors:
+    - '1mr <>'
+license:
+    - 'Apache-2.0'
+tags:
+    - 1mr
+    - linux
+repository: 'https://github.com/1mr/ansible'
+build_ignore:
+    - .git
+    - .github
+    - build
+    - Vagrantfile
+    - '*.tar.gz'
+    - Makefile
+    - requirements.txt
+homepage: 'https://github.com/1mr/ansible'
+documentation: 'https://github.com/1mr/ansible'
+issues: 'https://github.com/1mr/ansible/issues'

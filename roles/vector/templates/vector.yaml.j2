@@ -1,0 +1,7 @@
+{{ ansible_managed | comment }}
+
+data_dir: "{{ vector_data_dir | default('/var/lib/vector') }}"
+
+{% if vector_config is defined and vector_config %}
+{{ vector_config | to_nice_yaml(indent=2) }}
+{% endif %}
