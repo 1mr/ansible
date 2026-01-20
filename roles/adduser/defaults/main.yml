@@ -1,0 +1,4 @@
+---
+adduser_user:
+  - name: debian
+    state: absent

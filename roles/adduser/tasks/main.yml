@@ -1,0 +1,29 @@
+---
+- name: Add user(s) with default password
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | default('$6$G/HPRfEYFSW9.44l$3nPyw/AS.J5a1UmYGzSuvvasYprgMymXpzBmva6SuytOhWlR/npDzZf3T0dsMJtqFUVPxi3Bm.je2hQLjptC11') }}" # packer
+    shell: /bin/bash
+    update_password: on_create
+    state: "{{ item.state | default('present') }}"
+    remove: yes
+  with_items: "{{ adduser_user }}"
+  when: adduser_user is defined and adduser_user
+
+- name: Set change password before first login
+  ansible.builtin.command: chage -d 0 {{ item.name }}
+  register: chage_output
+  changed_when: chage_output.rc != 0
+  with_items: "{{ adduser_user }}"
+  when: adduser_user is defined and adduser_user and item.reset is defined
+
+- name: Add authorized_keys
+  ansible.posix.authorized_key:
+    user: "{{ item.0.name }}"
+    state: present
+    key: "{{ item.1 }}"
+  with_subelements:
+    - "{{ adduser_user }}"
+    - authorized_keys
+    - skip_missing: True
+  when: adduser_user is defined and item.1 is defined

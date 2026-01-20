@@ -1,0 +1,6 @@
+---
+- name: Test Add User Role
+  hosts: localhost
+  remote_user: root
+  roles:
+    - adduser
