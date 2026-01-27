@@ -1,0 +1,12 @@
+---
+- name: create directory
+  file:
+    path: /etc/update-motd.d
+    state: directory
+
+- name: copy config files
+  template:
+    src: 00-header.j2
+    dest: /etc/update-motd.d/00-header
+    mode: 0755
+  notify: update motd

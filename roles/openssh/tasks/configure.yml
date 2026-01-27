@@ -1,0 +1,39 @@
+---
+- name: Fill up TrustedUserCAKeys file
+  ansible.builtin.template:
+    src: trusted-user-ca-keys.j2
+    dest: /etc/ssh/trusted-user-ca-keys.pem
+    mode: u=rw,g=r,o=r
+  when: ssh_trusted_user_ca_keys is defined
+
+- name: Create auth_principals/root file
+  ansible.builtin.copy:
+    content: |
+      root
+    dest: /etc/ssh/auth_principals/root
+    mode: u=rw,g=r,o=r
+  when: ssh_trusted_user_ca_keys is defined and ssh_authorized_principals is defined
+
+- name: Fill up auth_principals files
+  ansible.builtin.copy:
+    content: |
+      {{ item.value }}
+    dest: /etc/ssh/auth_principals/{{ item.key }}
+    mode: u=rw,g=r,o=r
+  with_items: "{{ ssh_authorized_principals }}"
+  when: ssh_trusted_user_ca_keys is defined and ssh_authorized_principals is defined
+
+- name: Configure sshd_config file
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    mode: u=rw,g=r,o=r
+    # validate: /usr/sbin/sshd -t -f %s
+  notify:
+    - reload ssh
+
+- name: Check syntax of sshd_config file
+  ansible.builtin.command: sshd -t
+  register: result
+  changed_when: "result.rc != 0"
+  failed_when: ('ERROR' in result.stdout)

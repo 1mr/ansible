@@ -1,0 +1,9 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    - ENV: molecule
+  tasks:
+    - name: "Include 1mr.motd"
+      include_role:
+        name: "1mr.motd"

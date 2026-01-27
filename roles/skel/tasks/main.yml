@@ -1,0 +1,36 @@
+---
+- name: copy files to /etc/skel
+  copy:
+    src: etc/skel/{{ item }}
+    dest: /etc/skel
+  with_items:
+    - .bashrc
+    - .screenrc
+
+- name: copy scripts
+  copy:
+    src: usr/local/bin/{{ item }}
+    dest: /usr/local/bin
+    mode: 0755
+  with_items:
+    - screen-mem-usage
+
+- name: copy bashrc to /root
+  copy:
+    src: root/.bashrc
+    dest: /root/.bashrc
+
+- name: check existing users
+  command: ls -1 /home
+  register: users
+  changed_when: false
+
+- name: copy files for existing users
+  copy: >
+    src=etc/skel/{{ item.0 }}
+    dest=/home/{{ item.1 }}
+    owner={{ item.1 }}
+    group={{ item.1 }}
+  with_nested:
+    - [ '.bashrc', '.screenrc' ]
+    - '{{ users.stdout_lines }}'
