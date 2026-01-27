@@ -7,21 +7,30 @@
   when: ssh_trusted_user_ca_keys is defined
 
 - name: Create auth_principals/root file
-  ansible.builtin.copy:
-    content: |
-      root
-    dest: /etc/ssh/auth_principals/root
-    mode: u=rw,g=r,o=r
   when: ssh_trusted_user_ca_keys is defined and ssh_authorized_principals is defined
+  block:
+    - name: Ensure /etc/ssh/auth_principals directory exists
+      ansible.builtin.file:
+        path: /etc/ssh/auth_principals
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
 
-- name: Fill up auth_principals files
-  ansible.builtin.copy:
-    content: |
-      {{ item.value }}
-    dest: /etc/ssh/auth_principals/{{ item.key }}
-    mode: u=rw,g=r,o=r
-  with_items: "{{ ssh_authorized_principals }}"
-  when: ssh_trusted_user_ca_keys is defined and ssh_authorized_principals is defined
+    - name: Create auth_principals/root file
+      ansible.builtin.copy:
+        content: |
+          root
+        dest: /etc/ssh/auth_principals/root
+        mode: u=rw,g=r,o=r
+
+    - name: Fill up auth_principals files
+      ansible.builtin.copy:
+        content: |
+          {{ item.content }}
+        dest: /etc/ssh/auth_principals/{{ item.name }}
+        mode: u=rw,g=r,o=r
+      with_items: '{{ ssh_authorized_principals }}'
 
 - name: Configure sshd_config file
   ansible.builtin.template:
