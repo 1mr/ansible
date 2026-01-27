@@ -1,0 +1,17 @@
+---
+- name: Ensure Supervisor is installed
+  ansible.builtin.apt:
+    name: supervisor
+    state: present
+
+- name: Ensure Supervisor log dir exists
+  ansible.builtin.file:
+    path: "{{ supervisor_log_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure Supervisor is started and enabled
+  ansible.builtin.service:
+    name: supervisor
+    state: started
+    enabled: true

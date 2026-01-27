@@ -1,0 +1,12 @@
+---
+- name: Install supervisor
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - install_supervisor
+    - install
+
+- name: Configure supervisor
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - configure_supervisor
+    - configure

@@ -1,0 +1,37 @@
+---
+supervisor_version: ''
+
+supervisor_config_path: /etc/supervisor
+supervisor_include_files: '{{ supervisor_config_path }}/conf.d/*.conf'
+
+# A list of `program`s Supervisor will control. Example commented out below.
+supervisor_programs: []
+# - name: 'apache'
+#   command: apache2ctl -c "ErrorLog /dev/stdout" -DFOREGROUND
+#   state: present
+#   configuration: |
+#     autostart=true
+#     autorestart=true
+#     startretries=1
+#     startsecs=1
+#     redirect_stderr=true
+#     stderr_logfile=/var/log/apache-err.log
+#     stdout_logfile=/var/log/apache-out.log
+#     user=root
+#     killasgroup=true
+#     stopasgroup=true
+
+supervisor_nodaemon: false
+
+supervisor_log_dir: /var/log/supervisor
+
+supervisor_user: root
+supervisor_password: 'my_secret_password'
+
+supervisor_unix_http_server_enable: true
+supervisor_unix_http_server_socket_path: /var/run/supervisor.sock
+supervisor_unix_http_server_password_protect: true
+
+supervisor_inet_http_server_enable: false
+supervisor_inet_http_server_port: '*:9001'
+supervisor_inet_http_server_password_protect: true

@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: "gh_1mr"
+  description: install and configure firewall
+  min_ansible_version: "2.5"
+  license: "MIT"
+  platforms:
+    - name: Debian
+      versions:
+        - stretch
+        - buster
+  galaxy_tags:
+    - firewall
+    - system
