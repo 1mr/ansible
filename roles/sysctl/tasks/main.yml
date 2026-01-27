@@ -1,0 +1,13 @@
+---
+- name: Set sysctl setting
+  ansible.posix.sysctl:
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-ansible.conf
+  with_items: '{{ sysctl_settings | dict2items }}'
+  when:
+    - sysctl_settings is defined and sysctl_settings | length > 0
+  tags:
+    - configure_sysctl
