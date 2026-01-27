@@ -19,10 +19,10 @@ logger "*** Start etc Backup ***"
 
 /usr/bin/dpkg -l > /etc/packages.list
 
-tar -c --exclude-vcs --exclude-backups --exclude='*.sock' -I pigz -f "${backup_dir}/${HOSTNAME}_etc_${backup_date}.tgz" -C / etc 
+tar -c --exclude-vcs --exclude-backups --exclude='*.sock' -I pigz -f "${backup_dir}/${HOSTNAME}_etc_${backup_date}.tgz" -C / etc
 chmod 600 "${backup_dir}/${HOSTNAME}_etc_${backup_date}.tgz"
 
-tar -c --exclude-vcs --exclude-backups --exclude='*.sock' -I pigz -f "${backup_dir}/${HOSTNAME}_root_${backup_date}.tgz" -C / root
+tar -c --exclude-vcs --exclude-backups --exclude='*.sock' --exclude='*.log' -I pigz -f "${backup_dir}/${HOSTNAME}_root_${backup_date}.tgz" -C / root
 chmod 600 "${backup_dir}/${HOSTNAME}_root_${backup_date}.tgz"
 
 logger "*** Delete backups older than ${DAYS} days ***"

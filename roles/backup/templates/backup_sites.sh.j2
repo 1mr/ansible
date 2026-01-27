@@ -20,11 +20,15 @@ fi
 
 logger "*** Start sites Backup ***"
 
-tar -c --exclude-vcs --exclude-backups --exclude-caches --exclude='*.sock' -I pigz -f "${backup_dir}/${HOSTNAME}_sites_${backup_date}.tgz" -C /usr sites 
-chmod 600 "${backup_dir}/${HOSTNAME}_sites_${backup_date}.tgz"
-
-tar -c --exclude-vcs --exclude-backups --exclude-caches --exclude='*.sock' -I pigz -f "${backup_dir}/${HOSTNAME}_www_${backup_date}.tgz" -C /var www 
-chmod 600 "${backup_dir}/${HOSTNAME}_www_${backup_date}.tgz"
+for sites_root_dir in /usr/sites /var/www; do
+    if [ -d $sites_root_dir ]; then
+        cd ${sites_root_dir} && sites_sub_dir=`echo $sites_root_dir | cut -f3 -d '/'`
+        for i in `ls -d */ | cut -f1 -d'/'`; do
+            tar -c --exclude-vcs --exclude-backups --exclude-caches --exclude='*.sock' --exclude='*.log' -I pigz -f "${backup_dir}/${HOSTNAME}_${sites_sub_dir}_${i}_${backup_date}.tgz" -C $sites_root_dir $i
+            chmod 600 "${backup_dir}/${HOSTNAME}_${sites_sub_dir}_${i}_${backup_date}.tgz"
+        done
+    fi
+done
 
 logger "*** Delete backups older than ${DAYS} ***"
 

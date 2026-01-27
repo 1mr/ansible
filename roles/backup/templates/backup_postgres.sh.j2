@@ -1,0 +1,41 @@
+#!/bin/bash
+
+backup_parent_dir="/data/backups/postgres"
+backup_date=`date +%Y-%m-%d`
+backup_dir="${backup_parent_dir}/${backup_date}"
+echo "Backup directory: ${backup_dir}"
+mkdir -p "${backup_dir}"
+chmod 755 "${backup_dir}"
+HOSTNAME=`hostname`
+PG_CLI="sudo -u postgres psql"
+PG_PORT=`$PG_CLI -At -c "select setting from pg_settings where name='port';"`
+PG_SKIP_DB="{{ item.skip_dbs | default("'template0', 'template1', 'postgres'") }}"
+PG_DUMP="sudo -u postgres pg_dump -Fp"
+
+# set DAYS
+if [ -n "$1" ]; then
+  DAYS=$1
+else
+  DAYS={{ item.retention | default("14") }}
+fi
+
+logger "*** Start Postgres Backup ***"
+
+
+pg_databases=`$PG_CLI -At -c "select datname from pg_database where datname not in ($PG_SKIP_DB);"`
+
+# Backup and compress each database
+for db in $pg_databases
+do
+  echo "Creating backup of \"${db}\" database"
+  bkp_date=`date '+%F_%H-%M'`
+  $PG_DUMP -p $PG_PORT ${db} | pigz > "${backup_dir}/${HOSTNAME}_${db}_${bkp_date}.sql.gz"
+  chmod 600 "${backup_dir}/${HOSTNAME}_${db}_${bkp_date}.sql.gz"
+done
+
+logger "*** Delete Postgres backups older than ${DAYS} days ***"
+
+# Delete backups older than ${days}
+find ${backup_parent_dir} -name '*' -type d -mtime +${DAYS} -prune -exec rm -rfv "{}" \;
+
+logger "*** Finish Postgres Backup ***"

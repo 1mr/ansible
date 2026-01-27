@@ -1,0 +1,40 @@
+#!/bin/bash
+
+SB={{ item.storagebox }}
+SB_USERNAME={{ item.username }}
+SB_PORT=23
+BKP_PATH=({{ item.sync_bkp | default('"etc"') }})
+
+backup_base_dir="/data/backups"
+backup_date=`date +%Y-%m-%d`
+
+logger "*** Start Rsync (hetzner storage box) ***"
+
+for i in "${BKP_PATH[@]}"; do
+  echo "rsync ${backup_base_dir}/${i}/${backup_date}..."
+  rsync -av --stats --mkpath -e "ssh -T -o Compression=no -x -p $SB_PORT -i $HOME/.ssh/${SB}.pem" ${backup_base_dir}/${i}/${backup_date}/ ${SB_USERNAME}@${SB}:${i}/${backup_date}/ > /var/log/rsync.log
+done
+
+
+# bkp rotation
+if [ -n "$1" ]; then
+  DAYS=$1
+else
+  DAYS={{ item.retention | default("30") }}
+fi
+
+DAYS_DATE=$(date +%F -d "${DAYS} days ago")
+
+echo "checking rotation cleanup"
+for i in "${BKP_PATH[@]}"; do
+  echo "checking ${i} folder..."
+  bkp_paths=$(ssh ${SB_USERNAME}@${SB} -p $SB_PORT -i $HOME/.ssh/${SB}.pem "ls ${i}")
+  for p in ${bkp_paths}; do
+    if [[ $p < $DAYS_DATE ]]; then
+      echo "removing: ${i}/${p}"
+      ssh ${SB_USERNAME}@${SB} -p $SB_PORT -i $HOME/.ssh/${SB}.pem "rm -rf ${i}/${p}"
+    fi
+  done
+done
+
+logger "*** Finish Rsync (hetzner storage box) ***"
