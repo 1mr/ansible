@@ -1,0 +1,15 @@
+---
+- name: Restart postfix
+  ansible.builtin.service:
+    name: postfix
+    state: restarted
+
+- name: Update aliases
+  ansible.builtin.command: /usr/bin/newaliases
+  register: newaliases
+  changed_when: newaliases.rc != 0
+
+- name: Postmap sender_canonical
+  ansible.builtin.command: postmap /etc/postfix/sender_canonical
+  register: sender_canonical
+  changed_when: sender_canonical.rc != 0

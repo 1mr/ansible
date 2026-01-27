@@ -1,0 +1,9 @@
+[Definition]
+
+{% if ansible_distribution_major_version >= '9' %}
+loglevel = INFO
+{% else %}
+loglevel = {{ fail2ban_loglevel }}
+{% endif %}
+logtarget = {{ fail2ban_logtarget }}
+socket = {{ fail2ban_socket }}

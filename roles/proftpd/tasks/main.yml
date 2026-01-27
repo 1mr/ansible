@@ -1,0 +1,21 @@
+---
+
+# Install
+- import_tasks: install.yml
+  tags:
+    - proftpd
+    - install_proftpd
+
+# Configs
+- import_tasks: configure.yml
+  tags:
+    - proftpd
+    - configure_proftpd
+
+# Users
+- import_tasks: users.yml
+  tags:
+    - proftpd
+    - users_proftpd
+
+

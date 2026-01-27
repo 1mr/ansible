@@ -1,0 +1,17 @@
+---
+- name: Install fail2ban and ipset
+  ansible.builtin.apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache: true
+    cache_valid_time: 600
+  with_items:
+    - fail2ban
+    - ipset
+  when: ansible_distribution == 'Debian'
+
+- name: Ensure fail2ban starts on a fresh reboot
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true

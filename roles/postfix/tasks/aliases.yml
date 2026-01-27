@@ -1,0 +1,12 @@
+---
+- name: Add aliases
+  ansible.builtin.lineinfile:
+    dest: /etc/aliases
+    regexp: "^{{ item.key }}:"
+    line: "{{ item.key }}: {{ item.value.alias }}"
+  with_dict: '{{ postfix_aliases }}'
+  notify:
+    - Update aliases
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

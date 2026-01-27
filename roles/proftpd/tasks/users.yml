@@ -1,0 +1,23 @@
+---
+- name: users > get info about proftpd user
+  getent:
+    database: passwd
+    key: proftpd
+
+- name: users > Template config
+  vars:
+    proftpd_uid: "{{ getent_passwd[\"proftpd\"][1] }}"
+    proftpd_gid: "{{ getent_passwd[\"proftpd\"][2] }}"
+  template:
+    src:  "{{ proftpd_users_template|ternary(proftpd_users_template, 'users/default.j2') }}"
+    dest: "{{ proftpd_users_file }}"
+    mode: 0600
+
+- name: users | create home directory
+  file:
+    path: "{{ item.home }}"
+    state: directory
+    owner: "{{ item.uid|default('proftpd') }}"
+    group: "{{ item.gid|default('nogroup') }}"
+    mode: 0750
+  with_items: "{{ proftpd_users }}"

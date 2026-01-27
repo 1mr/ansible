@@ -1,0 +1,13 @@
+---
+- name: Install postfix
+  ansible.builtin.apt:
+    name: '{{ item }}'
+    state: latest
+    update_cache: true
+    cache_valid_time: 600
+  with_items:
+    - mutt
+    - postfix
+    - postfix-pcre
+    - bsd-mailx
+    - libsasl2-modules

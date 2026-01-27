@@ -1,0 +1,12 @@
+---
+
+# Configs
+proftpd_configs_exclusive: false
+proftpd_configs_dir:       /etc/proftpd/conf.d
+proftpd_configs_template:  ~
+proftpd_configs:           []
+
+# Users
+proftpd_users_file:        /etc/ftpd.passwd
+proftpd_users_template:    ~
+proftpd_users:             []

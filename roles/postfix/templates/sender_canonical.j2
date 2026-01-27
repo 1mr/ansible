@@ -1,0 +1,6 @@
+{% if postfix_sender_canonical_content is defined %}
+{{ postfix_sender_canonical_content }}
+{% else %}
+root@{{ inventory_hostname }}  {{ inventory_hostname }}@{{postfix_maildomain}}
+@{{ inventory_hostname }}       {{ inventory_hostname }}@{{postfix_maildomain}}
+{% endif %}

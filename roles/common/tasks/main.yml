@@ -1,0 +1,22 @@
+
+- name: common | install common packages
+  apt: >
+    pkg={{ item }}
+    state=latest
+    update_cache=yes
+  with_items:
+    - iotop
+    - htop
+    - iftop
+    - screen 
+    - mc
+    - curl
+    - bash-completion 
+    - apt-transport-https
+    - ca-certificates 
+    - git
+    - pigz
+    - ncdu 
+  tags: 
+  - install_common
+  - install

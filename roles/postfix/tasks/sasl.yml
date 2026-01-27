@@ -1,0 +1,16 @@
+---
+- name: Configure sasl password maps
+  ansible.builtin.template:
+    src: passwd.j2
+    dest: '{{ postfix_smtp_sasl_password_maps }}'
+    mode: '0600'
+
+- name: Create a hashmap database file for sasl
+  ansible.builtin.command: postmap hash:{{ postfix_smtp_sasl_password_maps }}
+  register: postmap
+  changed_when: postmap.rc != 0
+
+- name: Change a hashmap database file permission
+  ansible.builtin.file:
+    path: '{{ postfix_smtp_sasl_password_maps }}.db'
+    mode: '0600'

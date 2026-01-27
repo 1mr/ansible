@@ -1,0 +1,21 @@
+---
+- name: Copy fail2ban config file
+  ansible.builtin.copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: '0644'
+  with_items:
+    - { src: iptables-ipset-allports.conf, dest: /etc/fail2ban/action.d/iptables-ipset-allports.conf }
+  notify:
+    - Restart fail2ban
+
+- name: Copy fail2ban configs
+  ansible.builtin.template:
+    src: '{{ item }}.j2'
+    dest: /{{ item }}
+    mode: '0644'
+  with_items:
+    - etc/fail2ban/jail.local
+    - etc/fail2ban/fail2ban.local
+  notify:
+    - Restart fail2ban

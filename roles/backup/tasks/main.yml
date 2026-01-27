@@ -1,0 +1,9 @@
+---
+- name: copy backup script(s) to remote host
+  template: >
+    src={{ item.script }}.j2
+    dest=/usr/local/bin/{{ item.script }}
+    owner=root
+    group=root
+    mode=0700
+  with_items: '{{ backup }}'
