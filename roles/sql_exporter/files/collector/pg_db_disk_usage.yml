@@ -1,0 +1,81 @@
+collector_name: pg_db_disk_usage
+min_interval: 5m
+metrics:
+  - metric_name: pg_disk_usage_total_bytes
+    type: gauge
+    help: 'Size of index + data'
+    key_labels:
+      - datname
+      - relname
+      - schemaname
+    values:
+      - total_bytes
+    query_ref: pg_disk_usage
+  - metric_name: pg_table_rows
+    type: gauge
+    help: 'Estimated row count'
+    key_labels:
+      - datname
+      - relname
+      - schemaname
+    values:
+      - row_estimate
+    query_ref: pg_disk_usage
+  - metric_name: pg_disk_usage_index_bytes
+    type: gauge
+    help: 'Index size'
+    key_labels:
+      - datname
+      - relname
+      - schemaname
+    values:
+      - index_bytes
+    query_ref: pg_disk_usage
+  - metric_name: pg_disk_usage_toast_bytes
+    type: gauge
+    help: 'Toast size'
+    key_labels:
+      - datname
+      - relname
+      - schemaname
+    values:
+      - toast_bytes
+    query_ref: pg_disk_usage
+  - metric_name: pg_disk_usage_table_bytes
+    type: gauge
+    help: 'Table size'
+    key_labels:
+      - datname
+      - relname
+      - schemaname
+    values:
+      - table_bytes
+    query_ref: pg_disk_usage
+queries:
+  - query_name: pg_disk_usage
+    query: |
+      SELECT *
+        -- , pg_size_pretty(total_bytes) AS total,
+        -- pg_size_pretty(index_bytes) AS INDEX,
+        -- pg_size_pretty(toast_bytes) AS toast,
+        -- pg_size_pretty(table_bytes) AS TABLE
+        FROM (
+          SELECT *,
+            total_bytes-index_bytes-COALESCE(toast_bytes,0) AS table_bytes
+          FROM (
+            SELECT
+              c.oid,
+              current_database() datname,
+              nspname AS schemaname,
+              relname,
+              c.reltuples AS row_estimate,
+              pg_total_relation_size(c.oid) AS total_bytes,
+              pg_indexes_size(c.oid) AS index_bytes,
+              COALESCE(pg_total_relation_size(reltoastrelid),0) AS toast_bytes
+            FROM pg_class c
+            LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE relkind = 'r'
+              AND nspname NOT IN ('pg_catalog', 'information_schema')
+              AND nspname !~ '^pg_toast'
+          ) a
+        ) a ;

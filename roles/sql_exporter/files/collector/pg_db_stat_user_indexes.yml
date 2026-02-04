@@ -1,0 +1,48 @@
+collector_name: pg_db_stat_user_indexes
+metrics:
+  - metric_name: pg_stat_user_indexes_idx_scan
+    type: counter
+    help: 'Number of index scans initiated on this index'
+    key_labels:
+      - datname
+      - schemaname
+      - indexrelname
+      - relname
+    values:
+      - idx_scan
+    query_ref: pg_stat_user_indexes
+  - metric_name: pg_stat_user_indexes_idx_tup_fetch
+    type: counter
+    help: 'Number of live table rows fetched by simple index scans using this index'
+    key_labels:
+      - datname
+      - schemaname
+      - indexrelname
+      - relname
+    values:
+      - idx_tup_fetch
+    query_ref: pg_stat_user_indexes
+  - metric_name: pg_stat_user_indexes_idx_tup_read
+    type: counter
+    help: 'Number of index entries returned by scans on this index'
+    key_labels:
+      - datname
+      - schemaname
+      - indexrelname
+      - relname
+    values:
+      - idx_tup_read
+    query_ref: pg_stat_user_indexes
+
+queries:
+  - query_name: pg_stat_user_indexes
+    query: |
+      SELECT
+        current_database() datname,
+        schemaname,
+        relname,
+        indexrelname,
+        COALESCE(idx_scan,0) as idx_scan,
+        COALESCE(idx_tup_read,0) as idx_tup_read,
+        COALESCE(idx_tup_fetch,0) as idx_tup_fetch
+      FROM pg_stat_user_indexes;

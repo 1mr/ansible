@@ -1,0 +1,109 @@
+collector_name: pg_db_statio_user_tables
+metrics:
+  - metric_name: pg_statio_user_tables_heap_blks_read
+    type: counter
+    help: 'Number of disk blocks read from this table'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - heap_blks_read
+    query_ref: pg_statio_user_tables
+  - metric_name: pg_statio_user_tables_heap_blks_hit
+    type: counter
+    help: 'Number of buffer hits in this table'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - heap_blks_hit
+    query_ref: pg_statio_user_tables
+
+  - metric_name: pg_statio_user_tables_idx_blks_hit
+    type: counter
+    help: 'Number of buffer hits in all indexes on this table'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - idx_blks_hit
+    query_ref: pg_statio_user_tables
+  - metric_name: pg_statio_user_tables_idx_blks_read
+    type: counter
+    help: 'Number of disk blocks read from all indexes on this table'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - idx_blks_read
+    query_ref: pg_statio_user_tables
+
+  - metric_name: pg_statio_user_tables_tidx_blks_hit
+    type: counter
+    help: "Number of buffer hits in this table's TOAST table indexes (if any)"
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - tidx_blks_hit
+    query_ref: pg_statio_user_tables
+  - metric_name: pg_statio_user_tables_tidx_blks_read
+    type: counter
+    help: "Number of disk blocks read from this table's TOAST table indexes (if any)"
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - tidx_blks_read
+    query_ref: pg_statio_user_tables
+  - metric_name: pg_statio_user_tables_toast_blks_hit
+    type: counter
+    help: "Number of buffer hits in this table's TOAST table (if any)"
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - toast_blks_hit
+    query_ref: pg_statio_user_tables
+  - metric_name: pg_statio_user_tables_toast_blks_read
+    type: counter
+    help: "Number of disk blocks read from this table's TOAST table (if any)"
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - toast_blks_read
+    query_ref: pg_statio_user_tables
+
+queries:
+  - query_name: pg_statio_user_tables
+    query: |
+      SELECT
+        current_database() datname,
+        schemaname,
+        relname,
+        -- Number of disk blocks read from this table
+        COALESCE(heap_blks_read,0) as heap_blks_read,
+        -- Number of buffer hits in this table
+        COALESCE(heap_blks_hit,0) as heap_blks_hit,
+        -- Number of disk blocks read from all indexes on this table
+        COALESCE(idx_blks_read,0) as idx_blks_read,
+        -- Number of buffer hits in all indexes on this table
+        COALESCE(idx_blks_hit,0) as idx_blks_hit,
+        -- Number of disk blocks read from this table's TOAST table (if any)
+        COALESCE(toast_blks_read,0) as toast_blks_read,
+        -- Number of buffer hits in this table's TOAST table (if any)
+        COALESCE(toast_blks_hit,0) as toast_blks_hit,
+        -- Number of disk blocks read from this table's TOAST table indexes (if any)
+        COALESCE(tidx_blks_read,0) as tidx_blks_read,
+        -- Number of buffer hits in this table's TOAST table indexes (if any)
+        COALESCE(tidx_blks_hit,0) as tidx_blks_hit
+      FROM pg_statio_user_tables;

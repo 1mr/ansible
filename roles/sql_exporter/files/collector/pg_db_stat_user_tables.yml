@@ -1,0 +1,172 @@
+collector_name: pg_db_stat_user_tables
+metrics:
+  - metric_name: pg_stat_user_tables_analyze_count
+    type: counter
+    help: 'Number of times this table has been manually analyzed'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - analyze_count
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_idx_scan
+    type: counter
+    help: 'Number of index scans initiated on this table'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - idx_scan
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_idx_tup_fetch
+    type: counter
+    help: 'Number of live rows fetched by index scans'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - idx_tup_fetch
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_last_analyze
+    type: gauge
+    help: 'Last time at which this table was manually analyzed'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - last_analyze
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_last_vacuum
+    type: gauge
+    help: 'Last time at which this table was manually vacuumed (not counting VACUUM FULL)'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - last_vacuum
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_n_dead_tup
+    type: counter
+    help: 'Estimated number of dead rows'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - n_dead_tup
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_n_live_tup
+    type: counter
+    help: 'Estimated number of live rows'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - n_live_tup
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_n_tup_del
+    type: counter
+    help: 'Number of rows deleted'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - n_tup_del
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_n_tup_hot_upd
+    type: counter
+    help: 'Number of rows HOT updated (i.e., with no separate index update required)'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - n_tup_hot_upd
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_n_tup_ins
+    type: counter
+    help: 'Number of rows inserted'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - n_tup_ins
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_n_tup_upd
+    type: counter
+    help: 'Number of rows updated'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - n_tup_upd
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_seq_scan
+    type: counter
+    help: 'Number of sequential scans initiated on this table'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - seq_scan
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_seq_tup_read
+    type: counter
+    help: 'Number of live rows fetched by sequential scans'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - seq_tup_read
+    query_ref: pg_stat_user_tables
+  - metric_name: pg_stat_user_tables_vacuum_count
+    type: counter
+    help: 'Number of times this table has been manually vacuumed (not counting VACUUM FULL)'
+    key_labels:
+      - datname
+      - schemaname
+      - relname
+    values:
+      - vacuum_count
+    query_ref: pg_stat_user_tables
+
+queries:
+  - query_name: pg_stat_user_tables
+    query: |
+      SELECT
+        current_database() datname,
+        schemaname,
+        relname,
+        COALESCE(seq_scan,0) as seq_scan,
+        COALESCE(seq_tup_read,0) as seq_tup_read,
+        COALESCE(idx_scan,0) as idx_scan,
+        COALESCE(idx_tup_fetch,0) as idx_tup_fetch,
+        COALESCE(n_tup_ins,0) as n_tup_ins,
+        COALESCE(n_tup_upd,0) as n_tup_upd,
+        COALESCE(n_tup_del,0) as n_tup_del,
+        COALESCE(n_tup_hot_upd,0) as n_tup_hot_upd,
+        COALESCE(n_live_tup,0) as n_live_tup,
+        COALESCE(n_dead_tup,0) as n_dead_tup,
+
+        COALESCE(EXTRACT(EPOCH FROM last_vacuum), 0) as last_vacuum,
+        COALESCE(EXTRACT(EPOCH FROM last_autovacuum), 0) as last_autovacuum,
+        COALESCE(EXTRACT(EPOCH FROM last_analyze), 0) as last_analyze,
+        COALESCE(EXTRACT(EPOCH FROM last_autoanalyze), 0) as last_autoanalyze,
+
+        COALESCE(vacuum_count,0) as vacuum_count,
+        COALESCE(autovacuum_count,0) as autovacuum_count,
+        COALESCE(analyze_count,0) as analyze_count,
+        COALESCE(autoanalyze_count,0) as autoanalyze_count
+      FROM
+        pg_stat_user_tables;

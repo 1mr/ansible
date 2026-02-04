@@ -1,0 +1,89 @@
+collector_name: pg_global_replication
+metrics:
+  - metric_name: pg_replication_lag
+    type: gauge
+    help: 'Replication Lag'
+    values:
+      - lag
+    query: |
+      SELECT
+      CASE
+        WHEN NOT pg_is_in_recovery() THEN 0
+        WHEN pg_last_wal_receive_lsn () = pg_last_wal_replay_lsn () THEN 0
+        ELSE GREATEST (0, EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp())))
+      END AS lag;
+
+  - metric_name: pg_replication_slots_active
+    type: gauge
+    help: 'Flag indicating if the slot is active'
+    key_labels:
+      - slot_name
+    values:
+      - active
+    query_ref: pg_replication_slots
+
+  - metric_name: pg_replication_slots_current_wal_lsn
+    type: gauge
+    help: 'current_wal_lsn'
+    key_labels:
+      - slot_name
+    values:
+      - current_wal_lsn
+    query_ref: pg_replication_slots
+
+  - metric_name: pg_replication_slots_wal_lsn_diff
+    type: gauge
+    help: 'pg_wal_lsn_diff'
+    key_labels:
+      - slot_name
+    values:
+      - pg_wal_lsn_diff
+    query_ref: pg_replication_slots
+
+  - metric_name: pg_stat_replication
+    type: gauge
+    help: 'pg_stat_replication'
+    key_labels:
+      - pid
+      - usename
+      - application_name
+    value_label: lag
+    values:
+      - send
+      - receive
+      - replay
+      - total
+    query_ref: pg_stat_replication
+
+queries:
+  - query_name: pg_replication_slots
+    query: |
+      SELECT
+        slot_name,
+        slot_type,
+        database,
+        CASE WHEN pg_is_in_recovery() THEN
+          pg_last_wal_receive_lsn() - '0/0'
+        ELSE
+          pg_current_wal_lsn() - '0/0'
+        END AS current_wal_lsn,
+        COALESCE(confirmed_flush_lsn, '0/0') - '0/0' AS confirmed_flush_lsn,
+        pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) AS pg_wal_lsn_diff,
+        active::int
+      FROM pg_replication_slots;
+
+  - query_name: pg_stat_replication
+    query: |
+      select
+        pid,
+        usename,
+        application_name,
+        COALESCE(pg_wal_lsn_diff(pg_current_wal_lsn(), sent_lsn),0) as send,
+        COALESCE(pg_wal_lsn_diff(sent_lsn, flush_lsn),0) as receive,
+        COALESCE(pg_wal_lsn_diff(flush_lsn, replay_lsn),0) as replay,
+        COALESCE(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn),0) as total
+      from pg_stat_replication;
+    # -- on main query to track lag in bytes
+    # -- sending_lag could indicate heavy load on primary
+    # -- receiving_lag could indicate network issues or replica under heavy load
+    # -- replaying_lag could indicate replica under heavy load

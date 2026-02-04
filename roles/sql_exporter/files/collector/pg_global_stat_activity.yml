@@ -1,0 +1,39 @@
+collector_name: pg_global_stat_activity
+metrics:
+  - metric_name: pg_stat_activity_count
+    type: gauge
+    help: 'Number of transactions currently in progress'
+    key_labels:
+      - datname
+      - usename
+      - state
+    values:
+      - total
+    query_ref: pg_stat_activity
+
+  - metric_name: pg_db_stat_activity_oldest_timestamp_seconds
+    type: gauge
+    help: 'Age of the oldest transaction in seconds'
+    key_labels:
+      - datname
+      - usename
+      - state
+    values:
+      - oldest_timestamp_seconds
+    query_ref: pg_stat_activity
+
+queries:
+  - query_name: pg_stat_activity
+    query: |
+      SELECT
+        datname,
+        usename,
+        state,
+        COUNT(*) as total,
+        MAX(EXTRACT(EPOCH FROM clock_timestamp() - pg_stat_activity.xact_start)) AS oldest_timestamp_seconds
+      FROM pg_stat_activity
+      WHERE state IS DISTINCT FROM 'idle'
+        AND query NOT LIKE 'autovacuum:%'
+        AND pg_stat_activity.xact_start IS NOT NULL
+        AND datname NOT IN ('postgres', 'cloudsqladmin')
+      GROUP BY datname, usename, state;

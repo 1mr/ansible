@@ -1,0 +1,14 @@
+---
+- name: Install sql_exporter
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - sql_exporter
+    - sql_exporter_install
+    - install_sql_exporter
+
+- name: Configure sql_exporter
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - sql_exporter
+    - sql_exporter_configure
+    - configure_sql_exporter

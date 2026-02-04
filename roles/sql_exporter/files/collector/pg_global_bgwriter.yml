@@ -1,0 +1,29 @@
+collector_name: pg_stat_bgwriter
+metrics:
+  - metric_name: pg_stat_bgwriter_buffers_clean_total
+    type: counter
+    help: 'Total buffers cleaned by the background writer'
+    values: [buffers_clean]
+    query_ref: pg_stat_bgwriter
+
+  - metric_name: pg_stat_bgwriter_maxwritten_clean
+    type: gauge
+    help: 'Number of times the background writer stopped due to max written clean limit'
+    values: [maxwritten_clean]
+    query_ref: pg_stat_bgwriter
+
+  - metric_name: pg_stat_bgwriter_buffers_alloc_total
+    type: counter
+    help: 'Total buffers allocated'
+    values: [buffers_alloc]
+    query_ref: pg_stat_bgwriter
+
+queries:
+  - query_name: pg_stat_bgwriter
+    query: |
+      SELECT
+        buffers_clean,
+        maxwritten_clean,
+        buffers_alloc
+      FROM
+        pg_stat_bgwriter;

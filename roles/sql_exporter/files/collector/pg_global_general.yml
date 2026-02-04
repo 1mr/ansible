@@ -1,0 +1,68 @@
+collector_name: pg_global_general
+min_interval: 5m
+metrics:
+  - metric_name: pg_postmaster_start_time_seconds
+    type: gauge
+    help: 'uptime (epoch)'
+    values:
+      - 'epoch'
+    query: |
+      SELECT extract(epoch from pg_postmaster_start_time) AS epoch from pg_postmaster_start_time();
+
+  - metric_name: pg_settings_max_connections
+    type: gauge
+    help: 'Instance max_connections'
+    values:
+      - 'max_connections'
+    query: SELECT setting::float AS max_connections FROM pg_settings WHERE name = 'max_connections';
+
+  - metric_name: pg_database_size_bytes
+    type: gauge
+    help: 'DB size'
+    key_labels:
+      - 'datname'
+    values:
+      - 'bytes'
+    query: |
+      SELECT
+        pg_database.datname as datname,
+        pg_database_size(pg_database.datname) as bytes
+      FROM pg_database;
+
+  - metric_name: pg_database_xid
+    type: gauge
+    help: 'Current age of the database in XID'
+    key_labels:
+      - datname
+    values:
+      - xid_age
+    query_ref: pg_database_xid
+
+  - metric_name: pg_database_xid_to_wraparound_vacuum
+    type: gauge
+    help: 'XID remaining until wraparound prevention vacuum kicks in'
+    key_labels:
+      - datname
+    values:
+      - percent_to_wraparound_vacuum
+    query_ref: pg_database_xid
+
+queries:
+  - query_name: pg_settings
+    query: |
+      SELECT
+        name,
+        setting,
+        COALESCE(unit, ''),
+        short_desc,
+        vartype
+      FROM pg_settings
+      WHERE vartype IN ('bool', 'integer', 'real') AND name != 'sync_commit_cancel_wait';
+  - query_name: pg_database_xid
+    query: |
+      SELECT
+        datname,
+        age(datfrozenxid) xid_age,
+        (current_setting('autovacuum_freeze_max_age')::INT - age(datfrozenxid)) xid_to_wraparound_vacuum,
+        (ROUND((age(datfrozenxid) / current_setting('autovacuum_freeze_max_age')::NUMERIC)*100.0, 2)) percent_to_wraparound_vacuum
+      FROM pg_database;

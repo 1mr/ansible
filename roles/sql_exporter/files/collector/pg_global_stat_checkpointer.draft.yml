@@ -1,0 +1,82 @@
+collector_name: pg_stat_checkpointer
+metrics:
+  - metrics_name: pg_stat_checkpointer_checkpoints_timed_total
+    type: counter
+    help: 'Number of scheduled checkpoints that have been performed'
+    values: [buffers_clean]
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_checkpoints_req_total
+    type: counter
+    help: 'Number of requested checkpoints that have been performed'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_checkpoints_done_total
+    type: counter
+    help: 'Number of completed checkpoints'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_checkpoint_write_time_total
+    help: 'Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk, in milliseconds'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_checkpoint_sync_time_total
+    help: 'Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk, in milliseconds'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_buffers_checkpoint_total
+    type: counter
+    help: 'Number of buffers written during checkpoints'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_buffers_clean_total
+    type: counter
+    help: 'Number of buffers written by the background writer'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_maxwritten_clean_total
+    type: counter
+    help: 'Number of times the background writer stopped a cleaning scan because it had written too many buffers'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_buffers_backend_total
+    type: counter
+    help: 'Number of buffers written directly by a backend'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_buffers_backend_fsync_total
+    type: counter
+    help: 'Number of times a backend had to execute its own fsync call (normally the background writer handles those even when the backend does its own write)'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_buffers_alloc_total
+    type: counter
+    help: 'Number of buffers allocated'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_slru_written_total
+    type: counter
+    help: 'Number of SLRU buffers written during checkpoints and restartpoints'
+    query_ref: pg_stat_checkpointer
+
+  - metrics_name: pg_stat_checkpointer_stats_reset_total
+    type: counter
+    help: 'Time at which these statistics were last reset'
+    query_ref: pg_stat_checkpointer
+
+queries:
+  - query_name: pg_stat_checkpointer
+    query: |
+      SELECT
+        num_timed,
+        num_requested,
+        -- num_done,
+        restartpoints_timed,
+        restartpoints_req,
+        restartpoints_done,
+        write_time,
+        sync_time,
+        buffers_written,
+        -- slru_written,
+        stats_reset
+      FROM pg_stat_checkpointer;

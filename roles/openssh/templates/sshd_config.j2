@@ -1,5 +1,11 @@
 {{ ansible_managed | comment }}
+{% if ssh_ports is defined %}
+{% for port in ssh_ports %}
+Port {{ port }}
+{% endfor %}
+{% else %}
 Port {{ ssh_port|default(22) }}
+{% endif %}
 {% if ssh_address is defined %}
 {% for addr in ssh_address %}
 ListenAddress {{ addr }}

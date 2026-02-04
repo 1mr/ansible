@@ -1,0 +1,43 @@
+collector_name: pg_global_locks
+metrics:
+  - metric_name: pg_locks_count
+    type: gauge
+    help: 'Number of locks'
+    key_labels:
+      - datname
+      - mode
+    values:
+      - count
+    query: |
+      SELECT
+        pg_database.datname as datname,
+        -- Name of the lock mode
+        tmp.mode as mode,
+        COALESCE(count, 0) as count
+      FROM
+        (
+          VALUES
+            ('accesssharelock'),
+            ('rowsharelock'),
+            ('rowexclusivelock'),
+            ('shareupdateexclusivelock'),
+            ('sharelock'),
+            ('sharerowexclusivelock'),
+            ('exclusivelock'),
+            ('accessexclusivelock'),
+            ('sireadlock')
+        ) AS tmp(mode)
+      CROSS JOIN pg_database
+      LEFT JOIN (
+        SELECT
+          database,
+          lower(mode) AS mode,
+          count(*) AS count
+        FROM
+          pg_locks
+        WHERE
+          database IS NOT NULL
+        GROUP BY
+          database,
+          lower(mode)
+      ) AS tmp2 ON tmp.mode = tmp2.mode and pg_database.oid = tmp2.database;

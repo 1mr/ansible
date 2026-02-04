@@ -1,0 +1,33 @@
+---
+- name: Create main config
+  ansible.builtin.template:
+    src: sql_exporter.yml.j2
+    dest: "{{ sql_exporter_dirs.config_dir }}/{{ sql_exporter_config_file }}"
+    owner: root
+    group: "{{ sql_exporter_user_name }}"
+    mode: '0640'
+  notify: Restart sql_exporter service
+
+- name: Create collectors configs
+  ansible.builtin.template:
+    src: collector.yml.j2
+    dest: "{{ sql_exporter_dirs.config_dir }}/collectors/{{ item.name }}.yml"
+    owner: root
+    group: "{{ sql_exporter_user_name }}"
+    mode: '0640'
+  notify: Restart sql_exporter service
+  vars:
+    collector: "{{ item }}"
+  when: item.name is defined
+  loop: "{{ sql_exporter_collectors | default([]) }}"
+
+- name: Copy collectors files configs
+  ansible.builtin.copy:
+    src: 'files/collector/{{ item }}.yml'
+    dest: '{{ sql_exporter_dirs.config_dir }}/collectors/{{ item }}.yml'
+    owner: root
+    group: "{{ sql_exporter_user_name }}"
+    mode: '0640'
+  notify: Restart sql_exporter service
+  when: sql_exporter_collectors_predefined is defined
+  loop: "{{ sql_exporter_collectors_predefined | default([]) }}"

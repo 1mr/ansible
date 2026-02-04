@@ -1,0 +1,9 @@
+collector_name: pg_global_replication_general
+min_interval: 1m
+metrics:
+  - metric_name: pg_replication_is_replica
+    type: gauge
+    help: 'isReplica'
+    values:
+      - is_replica
+    query: select pg_is_in_recovery()::int as is_replica;

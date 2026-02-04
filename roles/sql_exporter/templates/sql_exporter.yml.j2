@@ -1,0 +1,17 @@
+{{ ansible_managed | comment }}
+global:
+  {{ sql_exporter_params | to_nice_yaml|indent(2) }}
+
+{% if sql_exporter_target is defined %}
+target:
+  data_source_name: '{{ sql_exporter_target.data_source_name }}'
+  collectors: [{{ sql_exporter_target.collectors }}]
+{% endif %}
+
+collector_files:
+  - "collectors/*.yml"
+
+{% if sql_exporter_jobs is defined %}
+jobs:
+{{ sql_exporter_jobs | to_nice_yaml(indent=2) }}
+{% endif %}

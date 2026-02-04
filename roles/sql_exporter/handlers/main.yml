@@ -1,0 +1,9 @@
+---
+- name: Reload sql_exporter unit
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart sql_exporter service
+  ansible.builtin.systemd:
+    name: "{{ sql_exporter_service_name }}"
+    state: restarted

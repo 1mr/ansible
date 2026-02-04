@@ -1,0 +1,65 @@
+---
+- name: Check if binary file exists
+  ansible.builtin.stat:
+    path: "{{ sql_exporter_dirs.binary_dir }}/sql_exporter"
+  register: binary_file
+
+- name: Download sql_exporter.tar.gz
+  ansible.builtin.get_url:
+    url: "{{ sql_exporter_targz_url }}"
+    dest: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz"
+    checksum: "{{ sql_exporter_targz_sums }}"
+    mode: '0640'
+  when: not binary_file.stat.exists
+
+- name: "Extract binary to {{ sql_exporter_dirs.binary_dir }}"
+  ansible.builtin.unarchive:
+    src: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz"
+    dest: "{{ sql_exporter_dirs.binary_dir }}"
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+      - "sql_exporter-{{ sql_exporter_version }}.linux-amd64/sql_exporter"
+  when: not binary_file.stat.exists
+
+- name: Remove tar.gz
+  ansible.builtin.file:
+    path: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz"
+    state: absent
+  when: not binary_file.stat.exists
+
+- name: Create user
+  ansible.builtin.user:
+    name: "{{ sql_exporter_user_name }}"
+    home: "/nonexistent"
+    create_home: false
+    shell: "/bin/false"
+    system: true
+
+- name: Create config dir
+  ansible.builtin.file:
+    path: '{{ sql_exporter_dirs.config_dir }}'
+    state: directory
+    mode: '0750'
+    owner: '{{ sql_exporter_user_name }}'
+
+- name: Create collectors dir
+  ansible.builtin.file:
+    path: '{{ sql_exporter_dirs.config_dir }}/collectors'
+    state: directory
+    mode: '0750'
+    owner: '{{ sql_exporter_user_name }}'
+
+- name: Create systemd unit
+  ansible.builtin.template:
+    src: sql_exporter.service.j2
+    dest: "{{ sql_exporter_systemd_unit }}"
+    mode: '0640'
+  notify:
+    - Reload sql_exporter unit
+    - Restart sql_exporter service
+
+- name: Enable service
+  ansible.builtin.systemd:
+    name: "{{ sql_exporter_service_name }}"
+    enabled: true
