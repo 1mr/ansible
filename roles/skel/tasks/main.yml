@@ -33,4 +33,4 @@
     group={{ item.1 }}
   with_nested:
     - [ '.bashrc', '.screenrc' ]
-    - '{{ users.stdout_lines }}'
+    - "{{ users.stdout_lines + ['root'] }}"
