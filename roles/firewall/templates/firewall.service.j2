@@ -1,0 +1,13 @@
+[Unit]
+Description=Firewall
+After=network.target syslog.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/firewall start
+ExecStop=/usr/local/sbin/firewall stop
+RemainAfterExit=yes
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 backtick 0 300 300 /bin/hostname -f
-backtick 1 0 0 /usr/local/bin/screen-mem-usage
+backtick 1 5 5 /usr/local/bin/screen-mem-usage
 startup_message off
 hardstatus off
 caption always "%{gk}[#%n]::[%t] %=%{gk}[%0`]::[%l]::[%1`] %=%{gk}[%c:%s]::[%d/%M/%Y]"

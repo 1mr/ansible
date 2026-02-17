@@ -1,8 +1,8 @@
 ---
 - name: create directories
-  file: >
-    path={{ item }}
-    state=directory
+  file:
+    path: "{{ item }}"
+    state: directory
   with_items:
     - /etc/firewall
     - /etc/firewall/custom
@@ -16,44 +16,43 @@
     - { src: 'firewall.conf.j2', dest: '/etc/firewall/firewall.conf', mode: '0644' }
     - { src: 'forwarding.conf.j2', dest: '/etc/firewall/forwarding.conf', mode: '0644' }
     - { src: 'ssh-new-limit.sh.j2', dest: '/etc/firewall/custom/ssh-new-limit.sh', mode: '0755' }
-  notify:
-    - restart firewall
 
 - name: copy custom scripts files 
-  copy: >
-    src={{ item }}
-    dest=/etc/firewall/custom/{{ item }}
-    mode=0755
+  copy:
+    src: "{{ item }}"
+    dest: /etc/firewall/custom/{{ item }}
+    mode: 0755
   with_items: "{{ firewall.scripts }}"
   when: firewall.scripts is defined
-  notify:
-    - restart firewall
 
 - name: configure firewall services
-  template: >
-    src=services.conf.j2
-    dest=/etc/firewall/services.conf
+  template:
+    src: services.conf.j2
+    dest: /etc/firewall/services.conf
   when: firewall.services|lower != 'none'
-  notify:
-    - restart firewall
 
 - name: configure firewall whitelist
-  template: >
-    src=ip-whitelist.conf.j2
-    dest=/etc/firewall/ip-whitelist.conf
+  template:
+    src: ip-whitelist.conf.j2
+    dest: /etc/firewall/ip-whitelist.conf
   when: firewall.whitelist|lower != 'none'
+
+- name: copy firewall executable script
+  copy:
+    src: firewall
+    dest: /usr/local/sbin/firewall
+    mode: '0755'
+
+- name: install firewall systemd unit file
+  template:
+    src: firewall.service.j2
+    dest: /etc/systemd/system/firewall.service
+    mode: '0644'
   notify:
+    - reload systemd
     - restart firewall
 
-- name: copy firewall script
-  copy: >
-    src=firewall
-    dest=/etc/init.d/firewall
-    mode=0755
-  notify:
-    - restart firewall
-
-- name: add firewall to autostart
-  service: >
-    name=firewall
-    enabled=yes
+- name: enable firewall service
+  systemd:
+    name: firewall
+    enabled: yes

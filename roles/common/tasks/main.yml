@@ -11,6 +11,8 @@
     - screen 
     - mc
     - curl
+    - net-tools
+    - ethtool
     - bash-completion 
     - apt-transport-https
     - ca-certificates 

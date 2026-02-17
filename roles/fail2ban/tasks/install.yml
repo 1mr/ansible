@@ -8,7 +8,6 @@
   with_items:
     - fail2ban
     - ipset
-  when: ansible_distribution == 'Debian'
 
 - name: Ensure fail2ban starts on a fresh reboot
   ansible.builtin.service:
