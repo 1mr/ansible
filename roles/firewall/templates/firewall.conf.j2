@@ -74,7 +74,7 @@ deny_torrent={{ firewall.disable_torrent | default ('false') }}
 ipv6_loopback_ok=true
 
 # set to 'true' (default) to drop all other ipv6 traffic
-ipv6_drop_all=true
+ipv6_drop_all={{ firewall.ipv6_drop_all | default ('true') }}
 
 # set to 'true' if you want to enable ipv6 forwarden
 # if set to false this setting overwrites sysctl settings

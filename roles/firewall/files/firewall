@@ -286,6 +286,10 @@ case "$1" in
         #################################################################
         # IPv6
         #################################################################
+        $IP6TABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+        # allow incoming ICMP ping pong
+        $IP6TABLES -A INPUT -p ipv6-icmp -j ACCEPT
 
         if $ipv6_loopback_ok ; then
             ## allow on loopback
@@ -338,7 +342,7 @@ case "$1" in
             $IPTABLES -A INPUT -m string --string "get_peers" --algo kmp --to 65535 -j DROP
             $IPTABLES -A INPUT -m string --string "announce" --algo kmp --to 65535 -j DROP
             $IPTABLES -A INPUT -m string --string "announce_peers" --algo kmp --to 65535 -j DROP
-        fi    
+        fi
         ## log all other packages and reject them
         #$IPTABLES -A INPUT -j LOG --log-prefix "IPTABLES: "
         $IPTABLES -A INPUT -j REJECT
@@ -358,7 +362,6 @@ case "$1" in
         $IPTABLES -F
         $IPTABLES -F -t nat
         $IPTABLES -X
-        
 
         ## allow anything
         $IPTABLES -P INPUT ACCEPT
