@@ -5,11 +5,11 @@
     dest: /etc/cron.d/{{ item.file }}
     mode: 0644
   with_items: '{{ cron }}'
-  when: (cron is defined) and (item.state | default('present') == 'present')
+  when: cron is defined and (item.state | default('present') == 'present')
 
 - name: Delete cron.d file(s)
   ansible.builtin.file:
     path: /etc/cron.d/{{ item.file }}
     state: absent
   with_items: '{{ cron }}'
-  when: (cron is defined) and (item.state | default('present') == 'absent')
+  when: cron is defined and (item.state | default('present') == 'absent')

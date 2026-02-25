@@ -14,7 +14,7 @@
     owner=root
     group=root
     mode=0440
-  with_items: "{{ sudo }}"
+  with_items: '{{ sudo }}'
   when: item.state|default('present') == 'present'
 
 - name: check unmanaged file(s)
@@ -27,15 +27,15 @@
   set_fact: managed_files="{{ sudo|map(attribute='file')|list }}"
 
 - name: delete unmanaged file(s)
-  file: >
-    path=/etc/sudoers.d/{{ item }}
-    state=absent
-  with_items: "{{ unmanaged_files.stdout_lines }}"
-  when: item not in "{{managed_files}}".split("'")[1::2] and item != "README"
+  file:
+    path: /etc/sudoers.d/{{ item }}
+    state: absent
+  with_items: '{{ unmanaged_files.stdout_lines }}'
+  when: item not in managed_files and item != "README"
 
 - name: delete sudoers.d file(s)
   file: >
     path=/etc/sudoers.d/{{ item.file }}
     state=absent
-  with_items: "{{ sudo }}"
+  with_items: '{{ sudo }}'
   when: item.state|default('present') == 'absent'

@@ -3,13 +3,12 @@
 [supervisord]
 nodaemon = {{ supervisor_nodaemon }}
 childlogdir = {{ supervisor_log_dir }}
-user = {{ supervisor_user }}
 pidfile = /var/run/supervisord.pid
 
 {% if supervisor_unix_http_server_enable %}
 [unix_http_server]
 file = {{ supervisor_unix_http_server_socket_path }}
-chown = {{ supervisor_user }}
+chmod = 700
 {% if supervisor_unix_http_server_password_protect %}
 username = {{ supervisor_user }}
 password = {SHA}{{ supervisor_password|hash('sha1') }}
