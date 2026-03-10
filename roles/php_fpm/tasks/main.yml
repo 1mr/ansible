@@ -1,0 +1,28 @@
+---
+- name: Install
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - install_php-fpm
+    - install
+    - php-fpm_install
+
+- name: Modules
+  ansible.builtin.import_tasks: modules.yml
+  tags:
+    - modules_php-fpm
+    - php-fpm_modules
+
+- name: Configure
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - configure_php-fpm
+    - php-fpm_configure
+    - configure
+
+- name: Pools
+  ansible.builtin.import_tasks: pools.yml
+  when: php_fpm_pools|lower != 'none'
+  tags:
+    - pools_php-fpm
+    - php-fpm_pools
+    - pools

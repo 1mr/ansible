@@ -1,0 +1,6 @@
+---
+- name: Install packages | php{{ php_fpm_ver }}
+  ansible.builtin.apt:
+    name:
+      - php{{ php_fpm_ver }}-cli
+      - php{{ php_fpm_ver }}-fpm

@@ -6,7 +6,7 @@
     shell: /bin/bash
     update_password: on_create
     state: "{{ item.state | default('present') }}"
-    remove: yes
+    remove: true
   with_items: '{{ adduser_user }}'
   when: adduser_user is defined and adduser_user | length > 0
 
@@ -25,5 +25,5 @@
   with_subelements:
     - '{{ adduser_user }}'
     - authorized_keys
-    - skip_missing: True
+    - skip_missing: true
   when: adduser_user is defined and item.1 is defined

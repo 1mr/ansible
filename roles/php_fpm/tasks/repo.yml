@@ -1,0 +1,16 @@
+---
+- name: Copy pinning config
+  ansible.builtin.copy: >
+    src=deb-sury-org-pin-600
+    dest=/etc/apt/preferences.d
+
+- name: Add sury repository key
+  ansible.builtin.apt_key: >
+    url=https://packages.sury.org/php/apt.gpg
+
+- name: Add sury repository
+  ansible.builtin.apt_repository: >
+    repo={{ item }}
+    filename=sury
+  with_items:
+    - 'deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main'

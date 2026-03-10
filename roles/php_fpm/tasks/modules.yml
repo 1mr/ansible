@@ -1,0 +1,16 @@
+---
+- name: Install modules | php{{ php_fpm_ver }}
+  ansible.builtin.apt:
+    name: php{{ php_fpm_ver }}-{{ item }}
+  loop: '{{ php_ver_modules | default([]) }}'
+  notify:
+    - Reload php-fpm
+  when: php_ver_modules is defined and php_ver_modules | length > 0
+
+- name: Install php modules
+  ansible.builtin.apt:
+    name: php-{{ item }}
+  loop: '{{ php_modules | default([]) }}'
+  notify:
+    - Reload php-fpm
+  when: php_modules is defined and php_modules | length > 0

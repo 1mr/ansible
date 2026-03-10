@@ -1,0 +1,49 @@
+---
+- name: Create log directory
+  ansible.builtin.file:
+    path: '/var/log/php{{ php_fpm_ver }}-fpm'
+    state: directory
+
+- name: Copy php configuration files
+  ansible.builtin.template: src=config.ini.j2
+    dest=/etc/php/{{ php_fpm_ver }}/mods-available/{{ item.name }}.ini
+  with_items: '{{ php_config }}'
+  notify:
+    - Reload php-fpm
+
+- name: Make symlinks for php configuration files
+  ansible.builtin.file:
+    src: '/etc/php/{{ php_fpm_ver }}/mods-available/{{ item[0].name }}.ini'
+    dest: '/etc/php/{{ php_fpm_ver }}/{{ item[1] }}/conf.d/{{ item[0].priority|default(30) }}-{{ item[0].name }}.ini'
+    state: link
+  with_nested:
+    - '{{ php_config }}'
+    - ['cli', 'fpm']
+  notify:
+    - Reload php-fpm
+
+- name: copy global configuration file
+  ansible.builtin.template:
+    src: php-fpm.conf.j2
+    dest: '/etc/php/{{ php_fpm_ver }}/fpm/php-fpm.conf'
+  with_items: '{{ php_fpm_conf }}'
+  when: php_fpm_conf|lower != 'none'
+  notify:
+    - Reload php-fpm
+
+- name: Copy logrotate
+  ansible.builtin.template:
+    src: php-fpm.logrotate.j2
+    dest: '/etc/logrotate.d/php{{ php_fpm_ver }}-fpm'
+
+- name: Check syntax of php-fpm configuration files
+  ansible.builtin.shell: >
+    php-fpm{{ php_fpm_ver }} -t
+  register: result
+  changed_when: 'result.rc != 0'
+  failed_when: ('ERROR' in result.stdout)
+
+- name: Remove old log file
+  ansible.builtin.file:
+    path: '/var/log/php{{ php_fpm_ver }}-fpm.log'
+    state: absent

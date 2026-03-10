@@ -1,0 +1,5 @@
+; configuration for php {{ item.name }} module
+; priority={{ item.priority|default(30) }}
+{% for v in item.vars %}
+{{ v }}
+{% endfor %}

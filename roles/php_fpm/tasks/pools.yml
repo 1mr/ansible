@@ -1,0 +1,41 @@
+---
+- name: Add pool configuration file(s)
+  ansible.builtin.template:
+    src: pool.conf.j2
+    dest: '/etc/php/{{ php_fpm_ver }}/fpm/pool.d/{{ item.name }}.conf'
+  with_items: '{{ php_fpm_pools }}'
+  when: item.state|default('present') == 'present'
+  notify:
+    - Reload php-fpm
+
+- name: Check unmanaged file(s)
+  ansible.builtin.shell: ls -1p /etc/php/{{ php_fpm_ver }}/fpm/pool.d | grep -v / | cut -d'.' -f1
+  register: unmanaged_files
+  changed_when: false
+
+- name: Whitelist managed file(s)
+  ansible.builtin.set_fact: managed_files="{{ php_fpm_pools|map(attribute='name')|list }}"
+
+- name: Delete unmanaged file(s)
+  ansible.builtin.file:
+    path=/etc/php/{{ php_fpm_ver }}/fpm/pool.d/{{ item }}.conf
+    state=absent
+  with_items: '{{ unmanaged_files.stdout_lines }}'
+  when: item not in managed_files
+  notify:
+    - Reload php-fpm
+
+- name: Delete pool configuration file(s)
+  ansible.builtin.file:
+    path=/etc/php/{{ php_fpm_ver }}/fpm/pool.d/{{ item.name }}.conf
+    state=absent
+  with_items: '{{ php_fpm_pools }}'
+  when: item.state|default('present') == 'absent'
+  notify:
+    - Reload php-fpm
+
+- name: Check syntax of php-fpm configuration file(s)
+  ansible.builtin.shell: php-fpm{{ php_fpm_ver }} -t
+  register: result
+  changed_when: 'result.rc != 0'
+  failed_when: ('ERROR' in result.stdout)

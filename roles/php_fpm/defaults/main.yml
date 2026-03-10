@@ -1,0 +1,40 @@
+---
+php_fpm_ver: '8.4'
+php_config:
+  - name: default
+    vars:
+      - expose_php = Off
+      - cgi.fix_pathinfo = 0
+      - max_execution_time = 300
+      - memory_limit = 256M
+      - post_max_size = 16M
+      - upload_max_filesize = 2M
+      - max_input_time = 300
+      - short_open_tag = On
+php_ver_modules: []
+php_modules: []
+php_fpm_conf:
+  - name: global
+    vars:
+      - 'pid = /var/run/php/php{{ php_fpm_ver }}-fpm.pid'
+      - 'error_log = /var/log/php{{ php_fpm_ver }}-fpm/php{{ php_fpm_ver }}-fpm.log'
+      - log_level = warning
+      - daemonize = yes
+      - 'include=/etc/php/{{ php_fpm_ver }}/fpm/pool.d/*.conf'
+php_fpm_pools:
+  - name: www
+    vars:
+      - user = www-data
+      - group = www-data
+      - listen = 127.0.0.1:9000
+      - listen.backlog = 65536
+      - pm = static
+      - pm.max_children = 30
+      - pm.max_requests = 150
+      - request_terminate_timeout = 300s
+      - rlimit_files = 65536
+      - rlimit_core = 0
+      - chdir = /
+      - php_flag[display_errors] = off
+      - 'php_admin_value[error_log] = /var/log/php{{ php_fpm_ver }}-fpm/error.www-data.log'
+      - php_admin_flag[log_errors] = on

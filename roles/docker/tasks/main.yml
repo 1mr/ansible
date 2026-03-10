@@ -1,0 +1,18 @@
+---
+- name: Install docker-ce
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - install_docker
+    - install
+
+- name: Configure docker-ce
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - configure_docker
+    - configure
+
+- name: Configure users
+  ansible.builtin.import_tasks: users.yml
+  tags:
+    - users_docker
+    - users
