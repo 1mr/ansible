@@ -22,3 +22,5 @@ unattended:
     - mysql-community-server
     - unifi
     - nginx
+    - nginx-core
+    - nginx-common
