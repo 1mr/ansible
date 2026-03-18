@@ -1,4 +1,10 @@
 ---
+- name: Configure apt
+  ansible.builtin.import_tasks: apt.yml
+  tags:
+    - apt_docker
+    - apt
+
 - name: Install docker-ce
   ansible.builtin.import_tasks: install.yml
   tags:

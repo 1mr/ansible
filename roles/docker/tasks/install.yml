@@ -1,15 +1,4 @@
 ---
-- name: Add or remove Docker repository.
-  ansible.builtin.deb822_repository:
-    name: '{{ docker_apt_filename }}'
-    types: deb
-    uris: '{{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }}'
-    suites: '{{ ansible_facts.distribution_release }}'
-    components: '{{ docker_apt_release_channel }}'
-    signed_by: '{{ docker_apt_gpg_key }}'
-    state: "{{ 'present' if docker_add_repo | bool else 'absent' }}"
-  notify: Apt update
-
 - name: Install Docker packages.
   ansible.builtin.package:
     name: '{{ docker_packages }}'
@@ -22,7 +11,7 @@
     name: '{{ docker_compose_package }}'
     state: '{{ docker_compose_package_state }}'
     allow_downgrade: true
-  notify: restart docker
+  notify: Restart docker
   ignore_errors: '{{ ansible_check_mode }}'
   when: docker_install_compose_plugin | bool
 

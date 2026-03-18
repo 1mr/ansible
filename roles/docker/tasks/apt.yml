@@ -1,0 +1,11 @@
+---
+- name: Add or remove Docker repository.
+  ansible.builtin.deb822_repository:
+    name: '{{ docker_apt_filename }}'
+    types: deb
+    uris: '{{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }}'
+    suites: '{{ ansible_facts.distribution_release }}'
+    components: '{{ docker_apt_release_channel }}'
+    signed_by: '{{ docker_apt_gpg_key }}'
+    state: "{{ 'present' if docker_add_repo | bool else 'absent' }}"
+  notify: Apt update
