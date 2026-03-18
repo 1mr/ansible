@@ -20,6 +20,11 @@
     src: root/.bashrc
     dest: /root/.bashrc
 
+- name: Copy screenrc to /root
+  ansible.builtin.copy:
+    src: root/.screenrc
+    dest: /root/.screenrc
+
 - name: Check existing users
   ansible.builtin.command: ls -1 /home
   register: users
