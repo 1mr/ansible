@@ -5,6 +5,7 @@ After=network.target syslog.target
 [Service]
 Type=oneshot
 ExecStart=/usr/local/sbin/firewall start
+ExecReload=/usr/local/sbin/firewall reload
 ExecStop=/usr/local/sbin/firewall stop
 RemainAfterExit=yes
 StandardOutput=journal

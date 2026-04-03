@@ -5,8 +5,19 @@ unattended:
     - mongodb-10gen
     - mongodb-clients
     - mongodb-server
+    - mongodb-database-tools
+    - mongodb-mongosh
+    - mongodb-org-database-tools-extra
+    - mongodb-org-database
+    - mongodb-org-mongos
+    - mongodb-org-server
+    - mongodb-org-shell
+    - mongodb-org-tools
+    - mongodb-org
     - mysql-client
     - mysql-server
+    - mysql-community-client
+    - mysql-community-server
     - php5
     - php7.0
     - php7.2
@@ -15,10 +26,15 @@ unattended:
     - php8.4
     - php-pear
     - supervisor
+    - mariadb-client-core
+    - mariadb-client
+    - mariadb-common
     - mariadb-server-core
     - mariadb-server
-    - mariadb-client
-    - mysql-community-client
-    - mysql-community-server
     - unifi
     - nginx
+    - nginx-core
+    - nginx-common
+    - clickhouse-server
+    - clickhouse-client
+    - clickhouse-common-static
