@@ -13,6 +13,7 @@ queries:
   - query_name: pg_stat_activity_autovacuum
     query: |
       SELECT
+        datname,
         SPLIT_PART(query, '.', 2) AS relname,
         EXTRACT(EPOCH FROM xact_start) AS timestamp_seconds
       FROM
