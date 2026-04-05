@@ -1,0 +1,38 @@
+---
+- name: create git user
+  user: > 
+    name=git
+    comment=git
+    group=www-data
+    shell=/usr/bin/git-shell
+
+- name: create git-shell-commands dir
+  file: >
+    path=/home/git/git-shell-commands
+    state=directory
+    owner=git
+    group=www-data
+
+- name: copy no-interactive-login file
+  copy: >
+    src=no-interactive-login
+    dest=/home/git/git-shell-commands
+    owner=git
+    group=www-data
+    mode=0755
+
+- name: copy check file
+  template: >
+    src=check.j2
+    dest=/home/git/git-shell-commands/check_{{ item.name|replace(".", "_") }}
+    owner=git
+    group=www-data
+    mode=0755
+  loop: '{{ deploy.project }}'
+
+- name: add git user key to authorized_keys
+  authorized_key: >
+    user=git
+    key="{{ lookup('file', playbook_dir + '/vars/deploy_keys/' + deploy.key + '.pub') }}"
+  tags:
+    - update_deploy_key
