@@ -36,10 +36,19 @@ start)
     echo "starting firewall..."
 
     ## DELETE OLD RULES
-    $IPTABLES -F
-    $IPTABLES -X
-    $IP6TABLES -F
-    $IP6TABLES -X
+    $IPTABLES -F INPUT
+    $IPTABLES -F FORWARD
+    $IPTABLES -F OUTPUT
+    $IPTABLES -X INPUT
+    $IPTABLES -X FORWARD
+    $IPTABLES -X OUTPUT
+
+    $IP6TABLES -F INPUT
+    $IP6TABLES -F FORWARD
+    $IP6TABLES -F OUTPUT
+    $IP6TABLES -X INPUT
+    $IP6TABLES -X FORWARD
+    $IP6TABLES -X OUTPUT
 
     #################################################################
     # DEFAULT POLICIES
