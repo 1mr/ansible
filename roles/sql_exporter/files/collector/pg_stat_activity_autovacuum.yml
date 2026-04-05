@@ -1,0 +1,21 @@
+collector_name: pg_stat_activity_autovacuum
+metrics:
+  - metric_name: pg_stat_activity_autovacuum_timestamp_seconds
+    type: gauge
+    help: 'Start timestamp of the vacuum process in seconds'
+    values: ['timestamp_seconds']
+    key_labels:
+      - datname
+      - relname
+    query_ref: pg_stat_activity_autovacuum
+
+queries:
+  - query_name: pg_stat_activity_autovacuum
+    query: |
+      SELECT
+        SPLIT_PART(query, '.', 2) AS relname,
+        EXTRACT(EPOCH FROM xact_start) AS timestamp_seconds
+      FROM
+        pg_catalog.pg_stat_activity
+      WHERE
+        query LIKE 'autovacuum:%';

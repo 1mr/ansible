@@ -1,4 +1,4 @@
-collector_name: pg_global_checkpoints
+collector_name: pg_settings_checkpoint
 min_interval: 5m
 metrics:
   - metric_name: pg_settings_checkpoint_timeout_seconds
@@ -13,21 +13,14 @@ metrics:
     help: 'Time spent flushing dirty buffers during checkpoint, as fraction of checkpoint interval'
     values:
       - 'checkpoint_completion_target'
-    query: SELECT setting::int AS checkpoint_completion_target FROM pg_settings WHERE name = 'checkpoint_completion_target';
-
-  - metric_name: pg_settings_checkpoint_completion_target
-    type: gauge
-    help: 'Time spent flushing dirty buffers during checkpoint, as fraction of checkpoint interval'
-    values:
-      - 'checkpoint_completion_target'
-    query: SELECT setting::int AS checkpoint_completion_target FROM pg_settings WHERE name = 'checkpoint_completion_target';
+    query: SELECT setting::float AS checkpoint_completion_target FROM pg_settings WHERE name = 'checkpoint_completion_target';
 
   - metric_name: pg_settings_log_checkpoints
     type: gauge
     help: 'Logs each checkpoint'
     values:
       - 'log_checkpoints'
-    query: SELECT setting::int AS log_checkpoints FROM pg_settings WHERE name = 'log_checkpoints';
+    query: SELECT CAST(setting::boolean AS integer) AS log_checkpoints FROM pg_settings WHERE name = 'log_checkpoints';
 
   - metric_name: pg_settings_checkpoint_warning_seconds
     type: gauge
@@ -35,6 +28,3 @@ metrics:
     values:
       - 'checkpoint_warning'
     query: SELECT setting::int AS checkpoint_warning FROM pg_settings WHERE name = 'checkpoint_warning';
-
-    # pg_stat_bgwriter_checkpoints_timed
-    # pg_stat_bgwriter_checkpoints_req

@@ -1,4 +1,4 @@
-collector_name: pg_global_replication
+collector_name: pg_replication
 metrics:
   - metric_name: pg_replication_lag
     type: gauge

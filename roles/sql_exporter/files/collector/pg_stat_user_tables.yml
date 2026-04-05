@@ -1,4 +1,4 @@
-collector_name: pg_db_stat_user_tables
+collector_name: pg_stat_user_tables
 metrics:
   - metric_name: pg_stat_user_tables_analyze_count
     type: counter

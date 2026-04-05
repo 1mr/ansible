@@ -1,21 +1,6 @@
-collector_name: pg_global_general
+collector_name: pg_database
 min_interval: 5m
 metrics:
-  - metric_name: pg_postmaster_start_time_seconds
-    type: gauge
-    help: 'uptime (epoch)'
-    values:
-      - 'epoch'
-    query: |
-      SELECT extract(epoch from pg_postmaster_start_time) AS epoch from pg_postmaster_start_time();
-
-  - metric_name: pg_settings_max_connections
-    type: gauge
-    help: 'Instance max_connections'
-    values:
-      - 'max_connections'
-    query: SELECT setting::float AS max_connections FROM pg_settings WHERE name = 'max_connections';
-
   - metric_name: pg_database_size_bytes
     type: gauge
     help: 'DB size'
@@ -48,16 +33,6 @@ metrics:
     query_ref: pg_database_xid
 
 queries:
-  - query_name: pg_settings
-    query: |
-      SELECT
-        name,
-        setting,
-        COALESCE(unit, ''),
-        short_desc,
-        vartype
-      FROM pg_settings
-      WHERE vartype IN ('bool', 'integer', 'real') AND name != 'sync_commit_cancel_wait';
   - query_name: pg_database_xid
     query: |
       SELECT

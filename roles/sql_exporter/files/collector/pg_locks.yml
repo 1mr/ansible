@@ -1,4 +1,4 @@
-collector_name: pg_global_locks
+collector_name: pg_locks
 metrics:
   - metric_name: pg_locks_count
     type: gauge

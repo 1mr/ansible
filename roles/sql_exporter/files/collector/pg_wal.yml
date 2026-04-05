@@ -1,0 +1,22 @@
+collector_name: pg_wal
+metrics:
+  - metric_name: pg_wal_segments
+    type: gauge
+    help: 'Number of WAL segments'
+    values: [segments]
+    query_ref: pg_ls_waldir
+
+  - metric_name: pg_wal_size_bytes
+    type: counter
+    help: 'Total size of WAL segments'
+    values: [size]
+    query_ref: pg_ls_waldir
+
+queries:
+  - query_name: pg_ls_waldir
+    query: |
+      SELECT
+        COUNT(*) AS segments,
+        SUM(size) AS size
+      FROM pg_ls_waldir()
+      WHERE name ~ '^[0-9A-F]{24}$';
