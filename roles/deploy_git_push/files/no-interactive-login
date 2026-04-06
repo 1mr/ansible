@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Color scheme
+red='\e[1;31m%s\e[0m'
+
+printf "$red\n" "Hi, $USER! You've successfully authenticated, but I do not provide interactive shell access."
+exit 128

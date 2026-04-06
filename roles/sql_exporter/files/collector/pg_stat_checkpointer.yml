@@ -1,0 +1,84 @@
+collector_name: pg_stat_checkpointer
+metrics:
+  - metric_name: pg_stat_checkpointer_num_timed_total
+    type: counter
+    help: 'Number of scheduled checkpoints due to timeout'
+    values: [num_timed]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_num_requested_total
+    type: counter
+    help: 'Number of requested checkpoints that have been performed'
+    values: [num_requested]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_checkpoints_done_total
+    type: counter
+    help: 'Number of completed checkpoints'
+    values: [num_done]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_restartpoints_timed_total
+    type: counter
+    help: 'Number of scheduled restartpoints due to timeout or after a failed attempt to perform it'
+    values: [restartpoints_timed]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_restartpoints_req_total
+    type: counter
+    help: 'Number of requested restartpoints'
+    values: [restartpoints_req]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_restartpoints_done_total
+    type: counter
+    help: 'Number of restartpoints that have been performed'
+    values: [restartpoints_done]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_write_time_total
+    type: counter
+    help: 'Total amount of time that has been spent in the portion of processing checkpoints and restartpoints where files are written to disk, in milliseconds'
+    values: [write_time]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_sync_time_total
+    type: counter
+    help: 'Total amount of time that has been spent in the portion of processing checkpoints and restartpoints where files are synchronized to disk, in milliseconds'
+    values: [sync_time]
+    query_ref: pg_stat_checkpointer
+
+  - metric_name: pg_stat_checkpointer_buffers_written_total
+    type: counter
+    help: 'Number of buffers written during checkpoints and restartpoints'
+    values: [buffers_written]
+    query_ref: pg_stat_checkpointer
+
+  # - metric_name: pg_stat_checkpointer_slru_written_total
+  #   type: counter
+  #   help: 'Number of SLRU buffers written during checkpoints and restartpoints'
+  #   values: [slru_written]
+  #   query_ref: pg_stat_checkpointer
+
+  # - metric_name: pg_stat_checkpointer_stats_reset_total
+  #   type: counter
+  #   help: 'Time at which these statistics were last reset'
+  #   values: [stats_reset]
+  #   query_ref: pg_stat_checkpointer
+
+queries:
+  - query_name: pg_stat_checkpointer
+    query: |
+      SELECT
+        num_timed,
+        num_requested,
+        num_done,
+        restartpoints_timed,
+        restartpoints_req,
+        restartpoints_done,
+        write_time,
+        sync_time,
+        buffers_written
+        -- slru_written,
+        -- stats_reset
+      FROM pg_stat_checkpointer;

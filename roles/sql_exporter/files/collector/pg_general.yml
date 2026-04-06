@@ -1,0 +1,10 @@
+collector_name: pg_general
+min_interval: 5m
+metrics:
+  - metric_name: pg_postmaster_start_time_seconds
+    type: gauge
+    help: 'uptime (epoch)'
+    values:
+      - 'epoch'
+    query: |
+      SELECT extract(epoch from pg_postmaster_start_time) AS epoch from pg_postmaster_start_time();

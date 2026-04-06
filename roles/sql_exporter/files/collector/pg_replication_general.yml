@@ -1,4 +1,4 @@
-collector_name: pg_global_replication_general
+collector_name: pg_replication_general
 min_interval: 1m
 metrics:
   - metric_name: pg_replication_is_replica

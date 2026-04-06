@@ -1,4 +1,4 @@
-collector_name: pg_db_stat_user_indexes
+collector_name: pg_stat_user_indexes
 metrics:
   - metric_name: pg_stat_user_indexes_idx_scan
     type: counter

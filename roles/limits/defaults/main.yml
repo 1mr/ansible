@@ -1,0 +1,9 @@
+limits:
+  - domain: "*"
+    type: "soft"
+    item: "nofile"
+    value: "65535"
+  - domain: "*"
+    type: "hard"
+    item: "nofile"
+    value: "65535"

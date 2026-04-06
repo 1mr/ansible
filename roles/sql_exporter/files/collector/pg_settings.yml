@@ -1,0 +1,35 @@
+collector_name: pg_settings
+min_interval: 5m
+metrics:
+  - metric_name: pg_settings_max_connections
+    type: gauge
+    help: 'Instance max_connections'
+    values:
+      - 'max_connections'
+    query: SELECT setting::float AS max_connections FROM pg_settings WHERE name = 'max_connections';
+
+  - metric_name: pg_settings_block_size
+    type: gauge
+    help: 'Instance block_size'
+    values:
+      - 'block_size'
+    query: SELECT setting::int AS block_size FROM pg_settings WHERE name = 'block_size';
+
+  - metric_name: pg_settings_max_wal_size
+    type: gauge
+    help: 'Instance max_wal_size'
+    values:
+      - 'max_wal_size'
+    query: SELECT setting::int AS max_wal_size FROM pg_settings WHERE name = 'max_wal_size';
+
+queries:
+  - query_name: pg_settings
+    query: |
+      SELECT
+        name,
+        setting,
+        COALESCE(unit, ''),
+        short_desc,
+        vartype
+      FROM pg_settings
+      WHERE vartype IN ('bool', 'integer', 'real') AND name != 'sync_commit_cancel_wait';

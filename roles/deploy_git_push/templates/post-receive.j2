@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+# Color scheme
+red='\e[1;31m%s\e[0m'
+green='\e[1;32m%s\e[0m'
+
+CURRENT_USER=`whoami`
+HOSTNAME=`hostname`
+REPO_DIR=/home/git/projects/{{ item.name }}
+WEB_DIR={{ item.web_dir | default('/usr/sites/'+ item.name + '/' + item.path|default('public')) }}
+LOG_FILE=/tmp/{{ item.name|replace(".", "_") }}_deploy.log
+
+check_exit_code() {
+    rc=$?
+    echo $rc > $LOG_FILE
+    if [ $rc -ne 0 ]; then
+        printf "   $red\n" "DEPLOYMENT FAILED"
+        exit $rc
+    fi
+}
+
+# Banner
+LENGTH=`echo $REPO_DIR|wc -c`
+LEN=$((LENGTH+12))
+printf "   /"
+printf "%${LEN}s" | tr ' ' =
+echo "\\"
+echo "   | User: $CURRENT_USER"
+echo "   | Host: $HOSTNAME"
+echo "   | Repository: $REPO_DIR"
+echo "   | Public dir: $WEB_DIR"
+printf "   \\"
+printf "%${LEN}s" | tr ' ' =
+echo "/"
+
+# Checkout
+while read oldrev newrev refname
+do
+    branch=$(git rev-parse --symbolic --abbrev-ref $refname)
+    sudo -u {{ item.user|default('www-data') }} git --git-dir=$REPO_DIR --work-tree=$WEB_DIR checkout -f $branch
+done
+check_exit_code
+
+
+# Remove untracked files and directories
+sudo -u {{ item.user|default('www-data') }} git --work-tree=$WEB_DIR clean -fd
+check_exit_code
+{% if item.cleanup is defined %}
+
+# Cleanup
+sudo -u {{ item.user|default('www-data') }} git --work-tree=$WEB_DIR \
+rm -r {% for item in item.cleanup %}{{ item }}{% if not loop.last %} \{{ '\n' }}{% endif %}{% endfor %}{{ ' ' }}
+check_exit_code
+{% endif %}
+
+# Postinstall
+if [ -f $WEB_DIR/composer.json ]; then
+    cd $WEB_DIR
+    sudo -u {{ item.user|default('www-data') }} php /usr/local/bin/composer.phar install --no-dev --no-scripts --optimize-autoloader
+    check_exit_code
+fi
+
+# laravel
+if [ -f $WEB_DIR/artisan ]; then
+{% if item.laravel.migration is defined %}
+    sudo -u {{ item.user|default('www-data') }} php artisan migrate --force
+    check_exit_code
+    sudo -u {{ item.user|default('www-data') }} php artisan optimize:clear
+    check_exit_code
+{% endif %}
+    sudo -u {{ item.user|default('www-data') }} php artisan config:cache
+    check_exit_code
+fi
+
+# Complete
+printf "   $green\n" "DEPLOYMENT COMPLETED"

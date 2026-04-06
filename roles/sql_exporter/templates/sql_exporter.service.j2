@@ -8,8 +8,8 @@ Group={{ sql_exporter_user_name }}
 RuntimeDirectory=sql_exporter
 RuntimeDirectoryMode=0755
 ExecStart={{ sql_exporter_dirs.binary_dir }}/sql_exporter --config.file={{ sql_exporter_dirs.config_dir }}/{{ sql_exporter_config_file }}
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=sql_exporter
 Restart=always
 

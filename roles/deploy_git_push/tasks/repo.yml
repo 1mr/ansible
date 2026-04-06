@@ -1,0 +1,92 @@
+---
+- name: Ensure project dir is exist
+  ansible.builtin.file:
+    path: /usr/sites/{{ item.name + '/public' }}
+    state: directory
+    owner: www-data
+    group: '{{ item.user | default("www-data") }}'
+  loop: '{{ deploy.project }}'
+  when: item.path is not defined
+
+- name: Ensure project dir is exist
+  ansible.builtin.file:
+    path: /usr/sites/{{ item.name + '/' + item.path }}
+    state: directory
+    owner: www-data
+    group: '{{ item.user | default("www-data") }}'
+  loop: '{{ deploy.project }}'
+  when: item.path is defined
+
+- name: Ensure projects dir is exist
+  ansible.builtin.file:
+    path: /home/git/projects
+    state: directory
+    owner: git
+    group: www-data
+    mode: '0755'
+
+- name: Create bare git repository
+  become: true
+  become_user: git
+  ansible.builtin.command:
+    cmd: git init --bare /home/git/projects/{{ item.name }}
+    creates: /home/git/projects/{{ item.name }}
+  loop: '{{ deploy.project }}'
+
+- name: Change git home permissions
+  ansible.builtin.file:
+    dest: /home/git
+    owner: git
+    group: '{{ item.user | default("www-data") }}'
+    mode: '0755'
+    recurse: true
+
+- name: Change git repository permissions
+  ansible.builtin.file:
+    dest: /home/git/projects/{{ item.name }}
+    owner: git
+    group: '{{ item.user | default("www-data") }}'
+    mode: '0775'
+    recurse: true
+  loop: '{{ deploy.project }}'
+
+- name: Change git config (sharedRepository)
+  become: true
+  become_user: git
+  community.general.git_config:
+    name: core.sharedRepository
+    value: group
+    repo: /home/git/projects/{{ item.name }}
+    scope: local
+  loop: '{{ deploy.project }}'
+
+- name: Change git config (shallowUpdate)
+  become: true
+  become_user: git
+  community.general.git_config:
+    name: receive.shallowUpdate
+    value: 'true'
+    repo: /home/git/projects/{{ item.name }}
+    scope: local
+  loop: '{{ deploy.project }}'
+
+- name: Change git config (safe.directory)
+  become: true
+  become_user: '{{ item.user | default("www-data") }}'
+  community.general.git_config:
+    name: safe.directory
+    value: /home/git/projects/{{ item.name }}
+    scope: global
+    add_mode: add
+  loop: '{{ deploy.project }}'
+
+- name: Create post-receive hook
+  ansible.builtin.template:
+    src: post-receive.j2
+    dest: /home/git/projects/{{ item.name }}/hooks/post-receive
+    owner: git
+    group: '{{ item.user | default("www-data") }}'
+    mode: '0755'
+  loop: '{{ deploy.project }}'
+  tags:
+    - update_git_hook

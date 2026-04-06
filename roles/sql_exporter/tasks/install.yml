@@ -1,39 +1,46 @@
 ---
 - name: Check if binary file exists
   ansible.builtin.stat:
-    path: "{{ sql_exporter_dirs.binary_dir }}/sql_exporter"
+    path: '{{ sql_exporter_dirs.binary_dir }}/sql_exporter'
   register: binary_file
+
+- name: Check the binary version
+  ansible.builtin.shell: "{{ sql_exporter_dirs.binary_dir }}/sql_exporter --version | grep sql_exporter | awk '{print $3}'"
+  register: binary_file_version
+  when: binary_file.stat.exists
 
 - name: Download sql_exporter.tar.gz
   ansible.builtin.get_url:
-    url: "{{ sql_exporter_targz_url }}"
-    dest: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz"
-    checksum: "{{ sql_exporter_targz_sums }}"
+    url: '{{ sql_exporter_targz_url }}'
+    dest: '/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz'
+    checksum: '{{ sql_exporter_targz_sums }}'
     mode: '0640'
-  when: not binary_file.stat.exists
+  when: not binary_file.stat.exists or sql_exporter_version != binary_file_version.stdout
 
-- name: "Extract binary to {{ sql_exporter_dirs.binary_dir }}"
+- name: 'Extract binary to {{ sql_exporter_dirs.binary_dir }}'
   ansible.builtin.unarchive:
-    src: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz"
-    dest: "{{ sql_exporter_dirs.binary_dir }}"
+    src: '/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz'
+    dest: '{{ sql_exporter_dirs.binary_dir }}'
     remote_src: true
     extra_opts:
       - --strip-components=1
-      - "sql_exporter-{{ sql_exporter_version }}.linux-amd64/sql_exporter"
-  when: not binary_file.stat.exists
+      - 'sql_exporter-{{ sql_exporter_version }}.linux-amd64/sql_exporter'
+  when: not binary_file.stat.exists or sql_exporter_version != binary_file_version.stdout
+  notify:
+    - Restart sql_exporter service
 
 - name: Remove tar.gz
   ansible.builtin.file:
-    path: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz"
+    path: '/tmp/sql_exporter-{{ sql_exporter_version }}.linux-amd64.tar.gz'
     state: absent
-  when: not binary_file.stat.exists
+  when: not binary_file.stat.exists or sql_exporter_version != binary_file_version.stdout
 
 - name: Create user
   ansible.builtin.user:
-    name: "{{ sql_exporter_user_name }}"
-    home: "/nonexistent"
+    name: '{{ sql_exporter_user_name }}'
+    home: '/nonexistent'
     create_home: false
-    shell: "/bin/false"
+    shell: '/bin/false'
     system: true
 
 - name: Create config dir
@@ -53,7 +60,7 @@
 - name: Create systemd unit
   ansible.builtin.template:
     src: sql_exporter.service.j2
-    dest: "{{ sql_exporter_systemd_unit }}"
+    dest: '{{ sql_exporter_systemd_unit }}'
     mode: '0640'
   notify:
     - Reload sql_exporter unit
@@ -61,5 +68,5 @@
 
 - name: Enable service
   ansible.builtin.systemd:
-    name: "{{ sql_exporter_service_name }}"
+    name: '{{ sql_exporter_service_name }}'
     enabled: true

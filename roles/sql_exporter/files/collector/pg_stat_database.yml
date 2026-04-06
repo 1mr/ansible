@@ -1,0 +1,171 @@
+collector_name: pg_stat_database
+metrics:
+  - metric_name: pg_stat_database_numbackends
+    type: gauge
+    help: 'Number of backends currently connected to this database. This is the only column in this view that returns a value reflecting current state; all other columns return the accumulated values since the last reset.'
+    values: [numbackends]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_xact_commit
+    type: gauge
+    help: 'Number of transactions in this database that have been committed'
+    values: [xact_commit]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_xact_rollback
+    type: gauge
+    help: 'Number of transactions in this database that have been rolled back'
+    values: [xact_rollback]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_blks_read
+    type: gauge
+    help: 'Number of disk blocks read in this database'
+    values: [blks_read]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_blks_hit
+    type: gauge
+    help: "Number of times disk blocks were found already in the buffer cache, so that a read was not necessary (this only includes hits in the PostgreSQL buffer cache, not the operating system's file system cache)"
+    values: [blks_hit]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_tup_returned
+    type: gauge
+    help: 'Number of rows returned by queries in this database'
+    values: [tup_returned]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_tup_fetched
+    type: gauge
+    help: 'Number of rows fetched by queries in this database'
+    values: [tup_fetched]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_tup_inserted
+    type: gauge
+    help: 'Number of rows inserted by queries in this database'
+    values: [tup_inserted]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_tup_updated
+    type: gauge
+    help: 'Number of rows updated by queries in this database'
+    values: [tup_updated]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_tup_deleted
+    type: gauge
+    help: 'Number of rows deleted by queries in this database'
+    values: [tup_deleted]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_conflicts
+    type: gauge
+    help: 'Number of queries canceled due to conflicts with recovery in this database. (Conflicts occur only on standby servers; see pg_stat_database_conflicts for details.)'
+    values: [conflicts]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_temp_files
+    type: gauge
+    help: 'Number of temporary files created by queries in this database. All temporary files are counted, regardless of why the temporary file was created (e.g., sorting or hashing), and regardless of the log_temp_files setting.'
+    values: [temp_files]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_temp_bytes
+    type: gauge
+    help: 'Total amount of data written to temporary files by queries in this database. All temporary files are counted, regardless of why the temporary file was created, and regardless of the log_temp_files setting.'
+    values: [temp_bytes]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_deadlocks
+    type: gauge
+    help: 'Number of deadlocks detected in this database'
+    values: [deadlocks]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_blk_read_time
+    type: gauge
+    help: 'Time spent reading data file blocks by backends in this database, in milliseconds'
+    values: [blk_read_time]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_blk_write_time
+    type: gauge
+    help: 'Time spent writing data file blocks by backends in this database, in milliseconds'
+    values: [blk_write_time]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  - metric_name: pg_stat_database_stats_reset
+    type: gauge
+    help: 'Time at which these statistics were last reset'
+    values: [stats_reset]
+    key_labels:
+      - datname
+    query_ref: pg_stat_database
+
+  # - metric_name: pg_stat_database_active_time_seconds_total
+  #   type: gauge
+  #   help: 'Time spent executing SQL statements in this database, in seconds'
+  #   values: [active_time_seconds_total]
+  #   key_labels:
+  #     - datname
+  #   query_ref: pg_stat_database
+
+queries:
+  - query_name: pg_stat_database
+    query: |
+      SELECT
+        -- datid,
+        datname,
+        numbackends,
+        xact_commit,
+        xact_rollback,
+        blks_read,
+        blks_hit,
+        tup_returned,
+        tup_fetched,
+        tup_inserted,
+        tup_updated,
+        tup_deleted,
+        conflicts,
+        temp_files,
+        temp_bytes,
+        deadlocks,
+        blk_read_time,
+        blk_write_time,
+        stats_reset
+      FROM pg_stat_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1','cloudsqladmin');

@@ -1,4 +1,4 @@
-collector_name: pg_global_replication
+collector_name: pg_replication
 metrics:
   - metric_name: pg_replication_lag
     type: gauge
@@ -13,32 +13,32 @@ metrics:
         ELSE GREATEST (0, EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp())))
       END AS lag;
 
-  - metric_name: pg_replication_slots_active
+  - metric_name: pg_replication_slot_active
     type: gauge
     help: 'Flag indicating if the slot is active'
     key_labels:
       - slot_name
     values:
       - active
-    query_ref: pg_replication_slots
+    query_ref: pg_replication_slot
 
-  - metric_name: pg_replication_slots_current_wal_lsn
+  - metric_name: pg_replication_slot_current_wal_lsn
     type: gauge
     help: 'current_wal_lsn'
     key_labels:
       - slot_name
     values:
       - current_wal_lsn
-    query_ref: pg_replication_slots
+    query_ref: pg_replication_slot
 
-  - metric_name: pg_replication_slots_wal_lsn_diff
+  - metric_name: pg_replication_slot_wal_lsn_diff
     type: gauge
     help: 'pg_wal_lsn_diff'
     key_labels:
       - slot_name
     values:
       - pg_wal_lsn_diff
-    query_ref: pg_replication_slots
+    query_ref: pg_replication_slot
 
   - metric_name: pg_stat_replication
     type: gauge
@@ -56,7 +56,7 @@ metrics:
     query_ref: pg_stat_replication
 
 queries:
-  - query_name: pg_replication_slots
+  - query_name: pg_replication_slot
     query: |
       SELECT
         slot_name,

@@ -1,4 +1,4 @@
-collector_name: pg_db_disk_usage
+collector_name: pg_disk_usage
 min_interval: 5m
 metrics:
   - metric_name: pg_disk_usage_total_bytes
