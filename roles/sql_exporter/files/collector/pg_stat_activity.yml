@@ -32,8 +32,8 @@ queries:
         COUNT(*) as total,
         MAX(EXTRACT(EPOCH FROM clock_timestamp() - pg_stat_activity.xact_start)) AS oldest_timestamp_seconds
       FROM pg_stat_activity
-      WHERE state IS DISTINCT FROM 'idle'
-        AND query NOT LIKE 'autovacuum:%'
-        AND pg_stat_activity.xact_start IS NOT NULL
-        AND datname NOT IN ('postgres', 'cloudsqladmin')
+      WHERE query NOT LIKE 'autovacuum:%'
+        -- AND state IS DISTINCT FROM 'idle'
+        -- AND pg_stat_activity.xact_start IS NOT NULL
+        AND datname NOT IN ('postgres', 'template0', 'template1', 'cloudsqladmin')
       GROUP BY datname, usename, state;

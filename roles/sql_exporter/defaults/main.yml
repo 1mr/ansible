@@ -22,6 +22,6 @@ sql_exporter_params:
   scrape_timeout: 15s
   scrape_timeout_offset: 500ms
   min_interval: 15s
-  max_connections: 3
-  max_idle_connections: 3
+  max_connections: 2
+  max_idle_connections: 2
   max_connection_lifetime: 10m
