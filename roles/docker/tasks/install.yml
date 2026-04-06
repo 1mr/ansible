@@ -3,6 +3,7 @@
   ansible.builtin.package:
     name: '{{ docker_packages }}'
     state: 'present'
+    update_cache: true
   notify: Restart docker
   ignore_errors: '{{ ansible_check_mode }}'
 
@@ -10,6 +11,7 @@
   ansible.builtin.package:
     name: '{{ docker_compose_package }}'
     state: '{{ docker_compose_package_state }}'
+    update_cache: true
     allow_downgrade: true
   notify: Restart docker
   ignore_errors: '{{ ansible_check_mode }}'
