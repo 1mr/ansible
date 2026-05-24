@@ -69,13 +69,8 @@ http {
     include /etc/nginx/vhosts/*;
 }
 
-{% if nginx_upstreams is defined or nginx_streams is defined %}
-stream {
-{% if nginx_upstreams is defined and nginx_upstreams != [] %}
-    include /etc/nginx/upstreams/*;
-{% endif %}
 {% if nginx_streams is defined and nginx_streams != [] %}
+stream {
     include /etc/nginx/streams/*;
-{% endif %}
 }
 {% endif %}
