@@ -9,6 +9,8 @@
 - name: Dearmor nginx repository key
   ansible.builtin.shell:
     cmd: gpg --dearmor < /tmp/nginx_signing.asc > /usr/share/keyrings/nginx-archive-keyring.gpg
+  register: _nginx_darmor_output
+  changed_when: _nginx_darmor_output.rc != 0
   when: _nginx_key_download.changed # noqa: no-handler
 
 - name: Add nginx repository
