@@ -1,0 +1,5 @@
+#{{ ansible_managed }}
+server {
+    listen {{ item.listen }};
+    proxy_pass {{ item.upstream }};
+}

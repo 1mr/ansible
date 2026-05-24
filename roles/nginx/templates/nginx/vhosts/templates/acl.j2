@@ -1,0 +1,12 @@
+{% if item.acl is defined %}
+
+{% for ip in item.acl %}
+    allow {{ ip }};
+{% endfor %}
+    deny all;
+{% endif %}
+
+{% if item.auth_basic is defined %}
+    auth_basic "Restricted";
+    auth_basic_user_file /usr/sites/{{ item.root|default(item.name) }}/.htpasswd;
+{% endif %}

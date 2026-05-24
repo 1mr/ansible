@@ -1,0 +1,19 @@
+{% if item.oauth2_proxy_server is defined %}
+
+    location /oauth2/ {
+        proxy_pass       {{ item.oauth2_proxy_server }};
+        proxy_set_header Host                    $host;
+        proxy_set_header X-Real-IP               $remote_addr;
+        proxy_set_header X-Scheme                $scheme;
+        proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+    }
+
+    location = /oauth2/auth {
+        proxy_pass                        {{ item.oauth2_proxy_server }};
+        proxy_set_header Host             $host;
+        proxy_set_header X-Real-IP        $remote_addr;
+        proxy_set_header X-Scheme         $scheme;
+        proxy_set_header Content-Length   "";
+        proxy_pass_request_body           off;
+    }
+{% endif %}

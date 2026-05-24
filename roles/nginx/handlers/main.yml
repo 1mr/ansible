@@ -1,0 +1,19 @@
+---
+- name: Restart nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: restarted
+  listen: restart nginx
+
+- name: Reload nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded
+  listen: reload nginx
+
+- name: Check syntax
+  ansible.builtin.command: nginx -t
+  register: nginx_check_result
+  changed_when: 'nginx_check_result.rc != 0'
+  failed_when: ('ERROR' in nginx_check_result.stdout)
+  listen: check syntax

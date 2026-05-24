@@ -1,0 +1,79 @@
+user {{ nginx_user }};
+worker_processes {{ nginx_worker_processes }};
+worker_priority {{ nginx_worker_priority }};
+timer_resolution {{ nginx_timer_resolution }};
+worker_rlimit_nofile {{ nginx_worker_rlimit_nofile }};
+
+error_log  /var/log/nginx/error.log;
+pid        /var/run/nginx.pid;
+
+{% if nginx_modules is defined %}
+{% for m in nginx_modules %}
+load_module modules/{{ m }}.so;
+{% endfor %}
+
+{% endif %}
+events {
+    worker_connections {{ nginx_max_clients }};
+    use epoll;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+{% if nginx_log_format is defined %}
+{% for v in nginx_log_format %}
+{% if v.raw is defined %}
+    log_format  {{ v.name }}  {{ v.raw }};
+{% else %}
+    log_format  {{ v.name }}  '{{ v.format }}';
+{% endif %}
+{% endfor %}
+{% else %}
+    log_format  main  '$remote_addr - $server_name - $remote_user [$time_local] ($scheme) "$request" "$status" $body_bytes_sent "$http_referer" "$http_user_agent" "$request_time sec"';
+{% endif %}
+
+    access_log  /var/log/nginx/access.log  main;
+
+{% for v in nginx_http_params %}
+    {{ v }};
+{% endfor %}
+
+{% if nginx_resolver is defined %}
+    resolver{% for i in nginx_resolver %} {{ i}}{% endfor %} valid=300s;
+    resolver_timeout 5s;
+{% endif %}
+
+{% if nginx_geoip2 is defined %}
+    geoip2 /var/lib/GeoIP/GeoLite2-Country.mmdb {
+        auto_reload 60m;
+        $geoip2_data_country_code {% if nginx_geoip2.source is defined %}source=${{ nginx_geoip2.source }}{% endif %} country iso_code;
+    }
+
+    geoip2 /var/lib/GeoIP/GeoLite2-City.mmdb {
+        auto_reload 60m;
+        $geoip2_data_city_name {% if nginx_geoip2.source is defined %}source=${{ nginx_geoip2.source }}{% endif %} city names en;
+    }
+{% endif %}
+
+{% if nginx_maps is defined %}
+    include /etc/nginx/maps/*;
+{% endif %}
+{% if nginx_upstreams is defined and nginx_upstreams != [] %}
+    include /etc/nginx/upstreams/*;
+{% endif %}
+{% if ENV is defined and ENV == 'development' %}
+    include /etc/nginx/vhosts.d/*;
+{% endif %}
+    include /etc/nginx/vhosts/*;
+}
+
+{% if nginx_upstreams is defined or nginx_streams is defined %}
+stream {
+{% if nginx_upstreams is defined and nginx_upstreams != [] %}
+    include /etc/nginx/upstreams/*;
+{% endif %}
+    include /etc/nginx/streams/*;
+}
+{% endif %}

@@ -1,0 +1,39 @@
+---
+- name: Add stream configuration file(s)
+  ansible.builtin.template:
+    src: 'streams/{{ item.template }}.j2'
+    dest: '/etc/nginx/streams/{{ item.name }}'
+    mode: '0644'
+  with_items: '{{ nginx_streams }}'
+  when: item.state|default('present') == 'present'
+  notify:
+    - check syntax
+    - reload nginx
+
+- name: Check unmanaged stream configuration file(s)
+  ansible.builtin.command:
+    cmd: ls -1p /etc/nginx/streams
+  register: nginx_unmanaged_files
+  changed_when: false
+
+- name: Whitelist managed stream configuration file(s)
+  ansible.builtin.set_fact:
+    nginx_managed_files: "{{ nginx_streams | map(attribute='name') | list }}"
+
+- name: Delete unmanaged stream configuration file(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/streams/{{ item }}'
+    state: absent
+  with_items: '{{ nginx_unmanaged_files.stdout_lines }}'
+  when: item not in nginx_managed_files
+  notify:
+    - reload nginx
+
+- name: Delete stream configuration file(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/streams/{{ item.name }}'
+    state: absent
+  with_items: '{{ nginx_streams }}'
+  when: item.state|default('present') == 'absent'
+  notify:
+    - reload nginx

@@ -1,0 +1,5 @@
+{% if item.proxy_param is defined %}
+{% for pp in item.proxy_param %}
+        {{ pp }};
+{% endfor %}
+{% endif %}

@@ -1,0 +1,6 @@
+{% if item.parameter is defined %}
+
+{% for p in item.parameter %}
+    {{ p }};
+{% endfor %}
+{% endif %}

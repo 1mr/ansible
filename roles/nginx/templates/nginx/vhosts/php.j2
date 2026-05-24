@@ -1,0 +1,144 @@
+{{ ansible_managed | comment }}
+server {
+    listen {% if item.listen is defined %}{{ item.listen }}:{% endif %}{% if item.http_port is defined %}{{ item.http_port }}{% else %}80{% endif %};
+{% if item.ipv6 is defined %}
+    listen {% if item.listen is defined %}{{ item.listen }}:{% if item.http_port is defined %}{{ item.http_port }}{% else %}80{% endif %}{% else %}[::]:{% if item.http_port is defined %}{{ item.http_port }}{% else %}80{% endif %}{% endif %};
+{% endif %}
+    server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
+{% if item.ssl is defined or item.letsencrypt is defined %}
+{% include 'templates/acme_challenge.j2' %}
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen {% if item.listen is defined %}{{ item.listen }}:{% endif %}{% if item.https_port is defined %}{{ item.https_port }}{% else %}443{% endif %} ssl;
+{% if item.ipv6 is defined %}
+    listen {% if item.listen is defined %}{{ item.listen }}:{% if item.https_port is defined %}{{ item.https_port }}{% else %}443{% endif %} ssl{% else %}[::]:{% if item.https_port is defined %}{{ item.https_port }}{% else %}443{% endif %} ssl{% endif %};
+{% endif %}
+    http2 on;
+{% include 'templates/ssl.j2' %}
+
+    server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
+{% endif %}
+
+{% include 'templates/log.j2' %}
+
+{% if item.custom_root is defined %}
+    root {{ item.custom_root }};
+{% else %}
+    root /usr/sites/{{ item.root|default(item.name) }};
+{% endif %}
+{% if item.lb_ssl_force is defined %}
+
+    if ($http_x_forwarded_proto = "http") {
+        return 301 https://$server_name$request_uri;
+    }
+{% endif %}
+{% if item.parameter is defined %}
+
+{% for p in item.parameter %}
+    {{ p }};
+{% endfor %}
+
+{% endif %}
+{% if item.pagespeed is defined %}
+    pagespeed on;
+{% for p in item.pagespeed %}
+    pagespeed {{ p }};
+{% endfor %}
+
+{% endif %}
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options "nosniff";
+{% if item.headers is defined %}
+{% for h in item.headers %}
+    add_header {{ h }};
+{% endfor %}
+{% endif %}
+{% if item.acl is defined %}
+
+{% for ip in item.acl %}
+    allow {{ ip }};
+{% endfor %}
+    deny all;
+{% endif %}
+
+    index {{ item.index|default("index.php") }};
+
+    location = /favicon.ico { log_not_found off; access_log off; }
+    location = /apple-touch-icon.png { log_not_found off; access_log off; }
+    location = /apple-touch-icon-precomposed.png { log_not_found off; access_log off; }
+    location = /robots.txt { log_not_found off; access_log off; }
+    location ~* (readme.html|license.txt|readme.txt) { return 404; }
+    location ~ ^/(README|INSTALL|LICENSE|CHANGELOG|UPGRADING|bin|SQL)$ { return 404; }
+    location ~ /\.(?!well-known) { return 404; }
+{% if item.locations is defined %}
+{% for l in item.locations %}
+    {{ l }};
+{% endfor %}
+{% endif %}
+
+{% if item.nginx_security_contact is defined %}
+    location '/.well-known/security.txt' { default_type "text/plain"; root /var/www; }
+{% endif %}
+{% if item.letsencrypt is defined %}
+    location '/.well-known/acme-challenge' { default_type "text/plain"; root /var/www; }
+{% endif %}
+{% if item.nginx_options is defined %}
+{% for n in item.nginx_options %}
+    {{ n }};
+{% endfor %}
+{% endif %}
+
+{% if item.modsecurity_rules is defined %}
+
+    modsecurity_rules '
+{% for msr in item.modsecurity_rules %}
+    {{ msr }}
+{% endfor %}
+    ';
+{% endif %}
+
+    location / {
+{% if 'ua_mute_log' in nginx_maps %}
+        if ($ua_mute_log) { access_log off; }
+{% endif %}
+{% if item.try_files is defined %}
+        try_files {{ item.try_files }};
+{% else %}
+        try_files $uri $uri/ /index.php?$args;
+{% endif %}
+    }
+
+    location ~* \.(?:ico|gif|jpe?g|png|woff2?|eot|otf|ttf|svg|js|css)$ {
+        add_header Pragma public;
+        add_header Cache-Control "public";
+        expires {{ item.static_expires | default('7d') }};
+{% if item.static.try_files is defined %}
+        try_files {{ item.static.try_files }};
+{% endif %}
+    }
+
+    location ~ \.php$ {
+{% if 'ua_mute_log' in nginx_maps %}
+        if ($ua_mute_log) { access_log off; }
+{% endif %}
+        try_files $fastcgi_script_name =404;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass {% if item.upstream is defined %}fpm-{{ item.upstream }}{% else %}fpm-www-data{% endif %};
+        fastcgi_index index.php;
+        fastcgi_param DOCUMENT_ROOT     $realpath_root;
+        fastcgi_param SCRIPT_FILENAME   $realpath_root$fastcgi_script_name;
+{% if item.fastcgi_param is defined %}
+{% for fp in item.fastcgi_param %}
+        fastcgi_param {{ fp }};
+{% endfor %}
+{% endif %}
+{% if item.php_options is defined %}
+{% for p in item.php_options %}
+        {{ p }};
+{% endfor %}
+{% endif %}
+    }
+}

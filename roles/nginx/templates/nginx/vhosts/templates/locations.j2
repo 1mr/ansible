@@ -1,0 +1,10 @@
+{% if item.locations is defined %}
+
+{% for c in item.locations %}
+    location {{ c.path }} {
+{% for o in c.options %}
+        {{ o }};
+{% endfor %}
+    }
+{% endfor %}
+{% endif %}

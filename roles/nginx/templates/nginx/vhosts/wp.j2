@@ -1,0 +1,142 @@
+{{ ansible_managed | comment }}
+server {
+    listen {% if item.listen is defined %}{{ item.listen }}:{% endif %}80;
+{% if item.ipv6 is defined %}
+    listen {% if item.listen is defined %}{{ item.listen }}:80{% else %}[::]:80{% endif %};
+{% endif %}
+    server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
+{% if item.ssl is defined or item.letsencrypt is defined %}
+{% if item.letsencrypt is defined %}
+    location '/.well-known/acme-challenge' {
+        default_type "text/plain";
+        root /var/www;
+    }
+{% endif %}
+{% if item.ssl_force is undefined %}
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen {% if item.listen is defined %}{{ item.listen }}:{% endif %}443 ssl;
+{% if item.ipv6 is defined %}
+    listen {% if item.listen is defined %}{{ item.listen }}:443 ssl{% else %}[::]:443 ssl{% endif %};
+{% endif %}
+    http2 on;
+    server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
+{% endif %}
+{% if item.ssl is defined %}
+    ssl_certificate /etc/nginx/ssl/{{ item.ssl }}.crt;
+    ssl_certificate_key /etc/nginx/ssl/{{ item.ssl }}.key;
+{% endif %}
+{% if item.letsencrypt is defined %}
+    ssl_certificate /etc/letsencrypt/live/{{ item.name }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ item.name }}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/{{ item.name }}/fullchain.pem;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+
+    location '/.well-known/acme-challenge' {
+        default_type "text/plain";
+        root /var/www;
+    }
+{% endif %}
+{% endif %}
+
+    access_log /var/log/nginx/{{ item.name }}-2xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_200{% else %}main if=$log_200{% endif %};
+    access_log /var/log/nginx/{{ item.name }}-3xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_300{% else %}main if=$log_300{% endif %};
+    access_log /var/log/nginx/{{ item.name }}-4xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_400{% else %}main if=$log_400{% endif %};
+    access_log /var/log/nginx/{{ item.name }}-5xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_500{% else %}main if=$log_500{% endif %};
+    error_log /var/log/nginx/{{ item.name }}-error.log;
+
+{% if item.custom_root is defined %}
+    root {{ item.custom_root }};
+{% else %}
+    root /usr/sites/{{ item.root|default(item.name) }};
+{% endif %}
+{% if item.headers is defined %}
+
+{% for h in item.headers %}
+    add_header {{ h }};
+{% endfor %}
+{% endif %}
+
+{% if item.acl is defined %}
+{% for ip in item.acl %}
+    allow {{ ip }};
+{% endfor %}
+    deny all;
+{% endif %}
+{% if item.parameter is defined %}
+{% for p in item.parameter %}
+    {{ p }};
+{% endfor %}
+
+{% endif %}
+{% if item.pagespeed is defined %}
+    pagespeed on;
+    location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" { add_header "" ""; }
+    location ~ "^/pagespeed_static/" { }
+    location ~ "^/ngx_pagespeed_beacon$" { }
+{% for p in item.pagespeed %}
+    pagespeed {{ p }};
+{% endfor %}
+
+{% endif %}
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    index {{ item.index|default("index.php") }};
+
+    location = /favicon.ico { log_not_found off; access_log off; }
+    location = /apple-touch-icon.png { log_not_found off; access_log off; }
+    location = /apple-touch-icon-precomposed.png { log_not_found off; access_log off; }
+    location = /robots.txt { log_not_found off; access_log off; }
+    location ~ /\.(?!well-known) { return 404; }
+    location ~* ^/(?:wp-content|wp-includes)/.*\.php$ { return 404; }
+    location ~* ^/wp-content/uploads/.*\.(?:s?html?|php|js|swf)$ { return 404; }
+    # location ~ ^/wp-content/plugins { return 404; }
+    # location ~* \/wp-admin\/load-(?:scripts|styles)\.php { return 404; }
+    location ~* ^/(?:xmlrpc\.php|wp-links-opml\.php|wp-config\.php|wp-config-sample\.php|wp-comments-post\.php|readme\.html|license\.txt)$ { return 404; }
+
+    location ~* \.(?:css(\.map)?|js(\.map)?|jpe?g|png|gif|ico|cur|heic|webp|tiff?|mp3|m4a|aac|ogg|midi?|wav|mp4|mov|webm|mpe?g|avi|ogv|flv|wmv)$ {
+        expires max;
+        add_header Cache-Control "public";
+    }
+
+    location ~* \.(?:svgz?|ttf|ttc|otf|eot|woff2?)$ {
+        expires max;
+        add_header Access-Control-Allow-Origin "*";
+	}
+
+{% if item.locations is defined %}
+{% for l in item.locations %}
+    {{ l }}
+{% endfor %}
+
+{% endif %}
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        try_files $fastcgi_script_name =404;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass {% if item.upstream is defined %}fpm-{{ item.upstream }}{% else %}fpm-www-data{% endif %};
+        fastcgi_index index.php;
+        fastcgi_param DOCUMENT_ROOT     $realpath_root;
+        fastcgi_param SCRIPT_FILENAME   $realpath_root$fastcgi_script_name;
+        # fastcgi_param PHP_ADMIN_VALUE   "open_basedir=$document_root/:/usr/lib/php/:/tmp/";
+{% if item.fastcgi_param is defined %}
+{% for fp in item.fastcgi_param %}
+        fastcgi_param {{ fp }};
+{% endfor %}
+{% endif %}
+{% if item.php_options is defined %}
+{% for p in item.php_options %}
+        {{ p }};
+{% endfor %}
+{% endif %}
+    }
+}

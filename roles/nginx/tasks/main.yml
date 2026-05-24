@@ -1,0 +1,73 @@
+---
+- name: Apt
+  ansible.builtin.import_tasks: apt.yml
+  tags:
+    - apt_nginx
+    - apt
+    - nginx_apt
+
+- name: Modules
+  ansible.builtin.import_tasks: modules.yml
+  tags:
+    - modules_nginx
+    - install
+    - nginx_modules
+
+- name: Install
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - install_nginx
+    - install
+    - nginx_install
+
+- name: Configure
+  ansible.builtin.import_tasks: configure.yml
+  tags:
+    - nginx_configure
+    - configure_nginx
+    - configure
+
+- name: Configure htpasswd
+  ansible.builtin.import_tasks: htpasswd.yml
+  when: nginx_htpasswd is defined and nginx_htpasswd
+  tags:
+    - htpasswd_nginx
+    - htpasswd
+    - nginx_htpasswd
+
+- name: Ssl
+  ansible.builtin.import_tasks: ssl.yml
+  tags:
+    - ssl_nginx
+    - ssl
+    - nginx_ssl
+
+- name: Upstreams
+  ansible.builtin.import_tasks: upstreams.yml
+  when: nginx_upstreams is defined and nginx_upstreams| length > 0
+  tags:
+    - upstreams_nginx
+    - upstreams
+    - nginx_upstreams
+
+- name: Maps
+  ansible.builtin.import_tasks: maps.yml
+  tags:
+    - maps_nginx
+    - maps
+    - nginx_maps
+
+- name: Vhosts
+  ansible.builtin.import_tasks: vhosts.yml
+  tags:
+    - vhosts_nginx
+    - vhosts
+    - nginx_vhosts
+
+- name: Streams
+  ansible.builtin.import_tasks: streams.yml
+  when: nginx_streams is defined and nginx_streams
+  tags:
+    - streams_nginx
+    - streams
+    - nginx_streams

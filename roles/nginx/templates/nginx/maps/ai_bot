@@ -1,0 +1,60 @@
+map $http_user_agent $ai_bot {
+  default 0;
+  "~*AI2Bot" 1; # AI2 — AI projects and datasets
+  "~*Ai2Bot-Dolma" 1; # AI2 (Allen Institute) — open data collection
+  "~*Amazonbot" 1;
+  "~*anthropic-ai" 1; # Anthropic — Claude language model
+  "~*Applebot" 1;
+  "~*Applebot-Extended" 1;
+  "~*aiHitBot" 1; # AI aggregator of business data
+  "~*Brightbot" 1; # AI bot, presumably generative AI
+  "~*Bytespider" 1; # ByteDance — AI and data collection
+  "~*bedrockbot" 1; # Amazon Bedrock — generative AI
+  "~*CCBot" 1; # Common Crawl — data for AI training
+  "~*GPTBot" 1; # OpenAI — data collection for ChatGPT
+  "~*ChatGPT-User" 1; # OpenAI — traffic from ChatGPT users
+  "~*OAI-SearchBot" 1; # OpenAI — analysis of public web content
+  "~*Claude" 1; # Anthropic — Claude model
+  "~*Claude-Web" 1;
+  "~*ClaudeBot" 1;
+  "~*PhindBot" 1; # Phind — search engine with AI assistant
+  "~*SBIntuitionsBot" 1; # Scale AI — annotation and data for AI
+  "~*QuillBot" 1; # QuillBot — AI for text paraphrasing
+  "~*MistralAI" 1; # Mistral AI — language models
+  "~*cohere" 1; # Cohere — language models and NLP
+  "~*cohere-ai" 1;
+  "~*cohere-training-data-crawler" 1;
+  "~*Crawlspace" 1;
+  "~*Diffbot" 1; # Diffbot — data structuring with AI
+  "~*DuckAssistBot" 1; # DuckDuckGo — DuckAssist AI feature
+  "~*FacebookBot" 1;
+  "~*FriendlyCrawler" 1;
+  "~*FirecrawlAgent" 1; # Firecrawl.ai — AI crawler
+  "~*Google-CloudVertexBot" 1; # Google Cloud Vertex AI — ML platform
+  "~*Google-Extended" 1; # Google AI — content collection for Bard, etc.
+  "~*GoogleOther" 1;
+  "~*GoogleOther-Image" 1;
+  "~*GoogleOther-Video" 1;
+  "~*iaskspider" 1;
+  "~*ICC-Crawler" 1;
+  "~*ImagesiftBot" 1;
+  "~*img2dataset" 1;
+  "~*ISSCyberRiskCrawler" 1;
+  "~*Kangaroo" 1;
+  "~*Meta-ExternalAgent" 1;
+  "~*Meta-ExternalFetcher" 1;
+  "~*omgili" 1;
+  "~*omgilibot" 1;
+  "~*PanguBot" 1;
+  "~*PerplexityBot" 1; # Perplexity.ai — AI search
+  "~*Perplexity-User" 1; # Perplexity.ai — user access
+  "~*PetalBot" 1;
+  "~*Scrapy" 1;
+  "~*SemrushBot-OCOB" 1;
+  "~*SemrushBot-SWA" 1;
+  "~*Sidetrade indexer bot" 1;
+  "~*Timpibot" 1;
+  "~*VelenPublicWebCrawler" 1;
+  "~*Webzio-Extended" 1;
+  "~*YouBot" 1;
+}

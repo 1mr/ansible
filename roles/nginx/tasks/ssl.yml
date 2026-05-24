@@ -1,0 +1,75 @@
+---
+- name: Copy ssl certificate (ssl_crt)
+  ansible.builtin.copy:
+    content: '{{ item.ssl_crt }}'
+    dest: '/etc/nginx/ssl/{{ item.ssl }}.crt'
+    mode: '0600'
+  with_items: '{{ nginx_vhosts }}'
+  when:
+    - item.ssl | default(None) != None
+    - item.ssl_crt is defined and item.ssl_crt | length > 0
+  no_log: true
+  notify:
+    - reload nginx
+
+- name: Copy ssl certificate
+  ansible.builtin.copy:
+    src: 'ssl/{{ item.ssl }}.crt'
+    dest: '/etc/nginx/ssl/{{ item.ssl }}.crt'
+    mode: '0600'
+  with_items: '{{ nginx_vhosts }}'
+  when:
+    - item.ssl | default(None) != None
+    - item.ssl_crt is not defined or item.ssl_crt | length == 0
+  no_log: true
+  notify:
+    - reload nginx
+
+- name: Copy ssl private key (ssl_key)
+  ansible.builtin.copy:
+    content: '{{ item.ssl_key }}'
+    dest: '/etc/nginx/ssl/{{ item.ssl }}.key'
+    mode: '0600'
+  with_items: '{{ nginx_vhosts }}'
+  when:
+    - item.ssl | default(None) != None
+    - item.ssl_key is defined and item.ssl_key | length > 0
+  no_log: true
+  notify:
+    - reload nginx
+
+- name: Copy ssl private key
+  ansible.builtin.copy:
+    src: 'ssl/{{ item.key }}.key'
+    dest: '/etc/nginx/ssl/{{ item.ssl }}.key'
+    mode: '0600'
+  with_items: '{{ nginx_vhosts }}'
+  when:
+    - item.ssl | default(None) != None
+    - item.ssl_key is not defined and item.ssl_key | length == 0
+  no_log: true
+  notify:
+    - reload nginx
+
+- name: Check unmanaged ssl certificates
+  ansible.builtin.command:
+    cmd: ls -1 /etc/nginx/ssl|sed 's/....$//'|uniq -d || true
+  register: nginx_unmanaged_files
+  changed_when: false
+  failed_when: false
+
+- name: Whitelist managed ssl certificates
+  ansible.builtin.set_fact:
+    nginx_managed_files: "{{ nginx_vhosts | selectattr('ssl', 'defined') | map(attribute='ssl') | list | unique }}"
+
+- name: Delete unmanaged ssl certificates
+  ansible.builtin.file:
+    path: '/etc/nginx/ssl/{{ item.0 }}{{ item.1 }}'
+    state: absent
+  with_nested:
+    - '{{ nginx_unmanaged_files.stdout_lines }}'
+    - '.crt'
+    - '.key'
+  when: item.0 not in nginx_managed_files and
+  notify:
+    - reload nginx

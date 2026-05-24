@@ -1,0 +1,5 @@
+    access_log /var/log/nginx/{{ item.name }}-2xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_200{% else %}main if=$log_200{% endif %};
+    access_log /var/log/nginx/{{ item.name }}-3xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_300{% else %}main if=$log_300{% endif %};
+    access_log /var/log/nginx/{{ item.name }}-4xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_400{% else %}main if=$log_400{% endif %};
+    access_log /var/log/nginx/{{ item.name }}-5xx-access.log {% if item.log is defined %}{{ item.log }} if=$log_500{% else %}main if=$log_500{% endif %};
+    error_log /var/log/nginx/{{ item.name }}-error.log;

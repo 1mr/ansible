@@ -1,0 +1,54 @@
+---
+nginx_branch: stable
+nginx_version: latest
+
+nginx_user: www-data
+nginx_worker_processes: auto
+nginx_worker_priority: -5
+nginx_timer_resolution: 100ms
+nginx_worker_rlimit_nofile: 20512
+nginx_max_clients: 10240
+nginx_default_port: 80
+
+nginx_http_params:
+  - server_tokens off
+  - sendfile off
+  - keepalive_timeout 30
+  - gzip on
+  - gzip_vary on
+  - gzip_comp_level 6
+  - gzip_http_version 1.1
+  - gzip_types text/plain text/css text/js text/xml text/javascript application/json application/x-javascript application/xml application/xml+rss application/javascript image/svg+xml
+  - gzip_proxied any
+  - gzip_disable "msie6"
+
+nginx_fastcgi_params:
+  template: default
+
+nginx_log_format:
+  - name: main
+    format: $remote_addr - $server_name - [$time_local] ($scheme) "$request" $status $bytes_sent "$http_referer" "$http_user_agent" "$request_time sec"
+  - name: lb
+    format: $http_x_forwarded_for - $server_name - [$time_local] ($http_x_forwarded_scheme) "$request" $status $bytes_sent "$http_referer" "$http_user_agent" "$request_time sec"
+  - name: cf
+    format: $http_cf_connecting_ip - $server_name - [$time_local] ($http_x_forwarded_scheme) "$request" $status $bytes_sent "$http_referer" "$http_user_agent" "$request_time sec"
+
+nginx_stub_status: 'on'
+nginx_stub_status_ip:
+  - { perm: allow, ip: 127.0.0.1 }
+
+nginx_reolver: []
+
+nginx_maps:
+  - status_code
+  - bad_bot
+
+nginx_modules: []
+
+nginx_vhosts:
+  - name: default
+    template: default
+
+nginx_upstreams: []
+
+# nginx_htpasswd: []

@@ -1,0 +1,38 @@
+---
+- name: Add upstream(s)
+  ansible.builtin.template:
+    src: 'nginx/upstreams/{{ item.template | default("default") }}.j2'
+    dest: '/etc/nginx/upstreams/{{ item.name }}'
+    mode: '0644'
+  with_items: '{{ nginx_upstreams }}'
+  when: item.state|default('present') == 'present'
+  notify:
+    - reload nginx
+
+- name: Check unmanaged upstream(s)
+  ansible.builtin.command:
+    cmd: ls -1p /etc/nginx/upstreams
+  register: nginx_unmanaged_files
+  changed_when: false
+
+- name: Whitelist managed upstream(s)
+  ansible.builtin.set_fact:
+    nginx_managed_files: "{{ nginx_upstreams | map(attribute='name') | list }}"
+
+- name: Delete unmanaged upstream(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/upstreams/{{ item }}'
+    state: absent
+  with_items: '{{ nginx_unmanaged_files.stdout_lines | default([]) }}'
+  when: item not in nginx_managed_files
+  notify:
+    - reload nginx
+
+- name: Delete upstream(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/upstreams/{{ item.name }}'
+    state: absent
+  with_items: '{{ nginx_upstreams }}'
+  when: item.state|default('present') == 'absent'
+  notify:
+    - reload nginx

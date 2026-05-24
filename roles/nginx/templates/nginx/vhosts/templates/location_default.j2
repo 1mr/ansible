@@ -1,0 +1,13 @@
+
+    location = /favicon.ico { log_not_found off; access_log off; }
+    location = /apple-touch-icon.png { log_not_found off; access_log off; }
+    location = /apple-touch-icon-precomposed.png { log_not_found off; access_log off; }
+    location = /robots.txt { log_not_found off; access_log off; }
+    location ~* (readme.html|license.txt|readme.txt) { return 404; }
+    location ~ ^/(README|INSTALL|LICENSE|CHANGELOG|UPGRADING|bin|SQL)$ { return 404; }
+{% if item.pass_dot_files is not defined %}
+    location ~ /\.(?!well-known) { return 404; }
+{% endif %}
+{% if item.nginx_security_contact is defined %}
+    location '/.well-known/security.txt' { default_type "text/plain"; root /var/www; }
+{% endif %}

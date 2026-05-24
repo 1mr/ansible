@@ -1,0 +1,5 @@
+map $http_user_agent $ua_mute_log {
+    default     0;
+    "~GoogleStackdriverMonitoring*"  1;
+    "~*HealthCheck"              1;
+}

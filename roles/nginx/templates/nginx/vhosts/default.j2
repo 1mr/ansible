@@ -1,0 +1,48 @@
+{{ ansible_managed | comment }}
+server {
+    listen {{ nginx_default_port | default(80) }} default_server;
+
+    access_log off;
+    error_log /dev/null emerg;
+
+    location '/.well-known/acme-challenge' { default_type "text/plain"; root /var/www; }
+
+    location / {
+    	root /var/www/default;
+      	index index.html index.htm;
+    }
+{% if nginx_stub_status is defined and nginx_stub_status == 'on' %}
+
+    location = /nginx_stats {
+    	stub_status on;
+{% for i in nginx_stub_status_ip %}
+{% if i.perm is defined %}
+	{{ i.perm }} {{ i.ip }};
+{% endif %}
+{% endfor %}
+        deny all;
+    }
+{% endif %}
+{% if item.locations is defined %}
+
+{% for l in item.locations %}
+    {{ l }}
+{% endfor %}
+{% endif %}
+{% if nginx_fpm_status is defined and nginx_fpm_status == 'on' %}
+
+    location ~ ^/(status|ping)$ {
+        access_log off;
+{% for i in nginx_stub_status_ip %}
+{% if i.perm is defined %}
+	{{ i.perm }} {{ i.ip }};
+{% endif %}
+{% endfor %}
+        deny all;
+        include /etc/nginx/fastcgi_params;
+        fastcgi_pass {% if item.upstream is defined %}fpm-{{ item.upstream }}{% else %}fpm-www-data{% endif %};
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME   $document_root$fastcgi_script_name;
+    }
+{% endif %}
+}

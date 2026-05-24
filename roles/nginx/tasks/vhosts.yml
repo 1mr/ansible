@@ -1,0 +1,39 @@
+---
+- name: Add virtual host configuration file(s)
+  ansible.builtin.template:
+    src: 'nginx/vhosts/{{ item.template }}.j2'
+    dest: '/etc/nginx/vhosts/{{ item.name }}'
+    mode: '0644'
+  with_items: '{{ nginx_vhosts }}'
+  when: item.state|default('present') == 'present'
+  notify:
+    - check syntax
+    - reload nginx
+
+- name: Check unmanaged virtual host configuration file(s)
+  ansible.builtin.command:
+    cmd: ls -1p /etc/nginx/vhosts
+  register: nginx_unmanaged_files
+  changed_when: false
+
+- name: Whitelist managed virtual host configuration file(s)
+  ansible.builtin.set_fact:
+    nginx_managed_files: "{{ nginx_vhosts | map(attribute='name') | list }}"
+
+- name: Delete unmanaged virtual host configuration file(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/vhosts/{{ item }}'
+    state: absent
+  with_items: '{{ nginx_unmanaged_files.stdout_lines }}'
+  when: item not in nginx_managed_files
+  notify:
+    - reload nginx
+
+- name: Delete virtual host configuration file(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/vhosts/{{ item.name }}'
+    state: absent
+  with_items: '{{ nginx_vhosts }}'
+  when: item.state|default('present') == 'absent'
+  notify:
+    - reload nginx

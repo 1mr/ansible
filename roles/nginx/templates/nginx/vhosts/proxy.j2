@@ -1,0 +1,56 @@
+{{ ansible_managed | comment }}
+server {
+    listen {% if item.listen is defined %}{{ item.listen }}:{% endif %}{% if item.http_port is defined %}{{ item.http_port }}{% else %}80{% endif %};
+{% if item.ipv6 is defined %}
+    listen {% if item.listen is defined %}{{ item.listen }}:{% if item.http_port is defined %}{{ item.http_port }}{% else %}80{% endif %}{% else %}[::]:{% if item.http_port is defined %}{{ item.http_port }}{% else %}80{% endif %}{% endif %};
+{% endif %}
+    server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
+{% if item.ssl is defined or item.letsencrypt is defined %}
+{% include 'templates/acme_challenge.j2' %}
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen {% if item.listen is defined %}{{ item.listen }}:{% endif %}{% if item.https_port is defined %}{{ item.https_port }}{% else %}443{% endif %} ssl;
+{% if item.ipv6 is defined %}
+    listen {% if item.listen is defined %}{{ item.listen }}:{% if item.https_port is defined %}{{ item.https_port }}{% else %}443{% endif %} ssl{% else %}[::]:{% if item.https_port is defined %}{{ item.https_port }}{% else %}443{% endif %} ssl{% endif %};
+{% endif %}
+    http2 on;
+{% include 'templates/ssl.j2' %}
+
+    server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
+{% endif %}
+
+{% include 'templates/log.j2' %}
+
+    root {% if item.custom_root is defined %}{{ item.custom_root }}{% else %}/usr/sites/{{ item.root|default(item.name) }}{% endif %};
+{% include 'templates/headers.j2' %}
+{% include 'templates/location_default.j2' %}
+{% include 'templates/acme_challenge.j2' %}
+{% include 'templates/parameter.j2' %}
+{% include 'templates/acl.j2' %}
+{% include 'templates/bot.j2' %}
+{% include 'templates/oauth2_proxy.j2' %}
+{% include 'templates/locations.j2' %}
+
+    location {% if item.location is defined %}{{item.location}}{% else %}/{% endif %} {
+{% if item.mute_log is defined %}
+        if ($ua_mute_log) { access_log off; }
+{% endif %}
+{% include 'templates/oauth2_proxy.j2' %}
+{% include 'templates/proxy_param.j2' %}
+{% if item.proxy_type is defined and item.proxy_type == 'grpc' %}
+        grpc_set_header Host $http_host;
+        grpc_set_header X-Real-IP $remote_addr;
+        grpc_set_header X-Forwarded-Proto $scheme;
+        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        grpc_pass {{ item.upstream }};
+{% else %}
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass {{ item.upstream }};
+{% endif %}
+    }
+}

@@ -1,0 +1,45 @@
+---
+- name: Get candidate nginx version from apt
+  ansible.builtin.command:
+    cmd: apt-cache policy nginx
+  register: _nginx_apt_policy
+  changed_when: false
+  when: nginx_version == "latest" and nginx_modules|default(None) != None
+
+- name: Set resolved nginx version
+  ansible.builtin.set_fact:
+    _nginx_version_resolved: >-
+      {{ _nginx_apt_policy.stdout | regex_search('Candidate: (\S+)', '\1') | first | regex_replace('-.*$', '')
+         if nginx_version == 'latest' else nginx_version }}
+  when: nginx_modules|default(None) != None
+
+- name: Download and extract nginx module
+  ansible.builtin.unarchive:
+    src: 'https://github.com/1mr/nginx-modules/releases/download/nginx-{{ _nginx_version_resolved }}/{{ item }}-linux-{{ _nginx_arch }}.tar.gz'
+    dest: /etc/nginx/modules/
+    remote_src: true
+  loop: '{{ nginx_modules }}'
+  when: nginx_modules|default(None) != None
+  notify:
+    - check syntax
+    - reload nginx
+
+- name: Check unmanaged nginx module(s)
+  ansible.builtin.command:
+    cmd: ls -1p /etc/nginx/modules
+  register: _nginx_unmanaged_modules
+  changed_when: false
+
+- name: Whitelist managed nginx module(s)
+  ansible.builtin.set_fact:
+    _nginx_managed_modules: "{{ nginx_modules | default([]) | map('regex_replace', '$', '.so') | list }}"
+
+- name: Delete unmanaged nginx module(s)
+  ansible.builtin.file:
+    path: '/etc/nginx/modules/{{ item }}'
+    state: absent
+  with_items: '{{ _nginx_unmanaged_modules.stdout_lines }}'
+  when: item not in _nginx_managed_modules
+  notify:
+    - check syntax
+    - reload nginx

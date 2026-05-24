@@ -1,0 +1,21 @@
+---
+- name: Add nginx repository key
+  ansible.builtin.get_url:
+    url: https://nginx.org/keys/nginx_signing.key
+    dest: /usr/share/keyrings/nginx-archive-keyring.gpg
+    mode: '0644'
+
+- name: Add nginx repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/nginx.list
+    mode: '0644'
+    # yamllint disable rule:line-length
+    content: |
+      deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages{{ "" if nginx_branch == "stable" else "/mainline" }}/debian/ {{ ansible_facts["distribution_release"] }} nginx
+      deb-src [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages{{ "" if nginx_branch == "stable" else "/mainline" }}/debian/ {{ ansible_facts["distribution_release"] }} nginx
+  register: _nginx_repo_update
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: _nginx_repo_update.changed # noqa: no-handler

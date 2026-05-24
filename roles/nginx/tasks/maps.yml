@@ -1,0 +1,10 @@
+---
+- name: Copy map(s)
+  ansible.builtin.template:
+    src: 'nginx/maps/{{ item }}'
+    dest: '/etc/nginx/maps/{{ item }}'
+    mode: '0644'
+  with_items: '{{ nginx_maps }}'
+  when: nginx_maps|default(None) != None
+  notify:
+    - reload nginx

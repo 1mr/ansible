@@ -1,0 +1,6 @@
+{% if item.headers is defined %}
+
+{% for h in item.headers %}
+        add_header {{ h }};
+{% endfor %}
+{% endif %}
