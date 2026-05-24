@@ -1,2 +1,4 @@
 ---
 run_not_in_container: True
+
+hosts_file: []
