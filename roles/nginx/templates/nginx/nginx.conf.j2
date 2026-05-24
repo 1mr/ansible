@@ -74,6 +74,8 @@ stream {
 {% if nginx_upstreams is defined and nginx_upstreams != [] %}
     include /etc/nginx/upstreams/*;
 {% endif %}
+{% if nginx_streams is defined and nginx_streams != [] %}
     include /etc/nginx/streams/*;
+{% endif %}
 }
 {% endif %}
