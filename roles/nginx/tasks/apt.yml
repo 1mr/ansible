@@ -1,9 +1,15 @@
 ---
-- name: Add nginx repository key
+- name: Download nginx repository key
   ansible.builtin.get_url:
     url: https://nginx.org/keys/nginx_signing.key
-    dest: /usr/share/keyrings/nginx-archive-keyring.gpg
+    dest: /tmp/nginx_signing.asc
     mode: '0644'
+  register: _nginx_key_download
+
+- name: Dearmor nginx repository key
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/nginx_signing.asc > /usr/share/keyrings/nginx-archive-keyring.gpg
+  when: _nginx_key_download.changed # noqa: no-handler
 
 - name: Add nginx repository
   ansible.builtin.copy:
