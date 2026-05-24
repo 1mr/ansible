@@ -70,6 +70,13 @@ if [ -f $WEB_DIR/artisan ]; then
 {% endif %}
     sudo -u {{ item.user|default('www-data') }} php artisan config:cache
     check_exit_code
+{% if item.laravel.workers is defined %}
+{% for i in item.laravel.workers  %}
+    printf "worker: {{ i }} is restarting...\n"
+    sudo systemctl restart {{ i }}.service
+    check_exit_code
+{% endfor %}
+{% endif %}
 fi
 
 # Complete
