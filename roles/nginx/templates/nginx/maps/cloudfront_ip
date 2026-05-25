@@ -1,0 +1,4 @@
+map $http_cloudfront_viewer_address $cloudfront_viewer_ip {
+  "~*^(?<cf_viewer_address>.*):\d{1,5}$" $cf_viewer_address;
+  default remote_addr;
+}
