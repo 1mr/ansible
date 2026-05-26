@@ -1,21 +1,36 @@
 ---
-- name: "Prepare apt"
+- name: Prepare apt
   when:
     - "ansible_facts['pkg_mgr'] == 'apt'"
   block:
-    - name: "Import datadog apt gpg key"
+    - name: 'Import datadog apt gpg key'
       ansible.builtin.get_url:
-        url: "https://keys.datadoghq.com/DATADOG_APT_KEY_CURRENT.public"
+        url: 'https://keys.datadoghq.com/DATADOG_APT_KEY_CURRENT.public'
         dest: /usr/share/keyrings/datadog-apt-keyring.asc
-        mode: "0644"
-    - name: "Add vector apt repository"
+        mode: '0644'
+    - name: 'Add vector apt repository'
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/datadog-apt-keyring.asc] https://apt.vector.dev/ stable vector-0"
+        repo: 'deb [signed-by=/usr/share/keyrings/datadog-apt-keyring.asc] https://apt.vector.dev/ stable vector-0'
         filename: vector
         update_cache: true
 
-- name: "Install vector"
+- name: Install vector
   ansible.builtin.package:
     name: "vector{{ (vector_version != '') | ansible.builtin.ternary('={{ vector_version }}', '') }}"
-    state: "present"
+    state: 'present'
+  notify: restart_vector
+
+- name: Check if docker group exists
+  ansible.builtin.getent:
+    database: group
+    key: docker
+  ignore_errors: true
+  register: _vector_docker_group
+
+- name: Add vector to docker group
+  ansible.builtin.user:
+    name: vector
+    groups: docker
+    append: true
+  when: _vector_docker_group is not failed
   notify: restart_vector
