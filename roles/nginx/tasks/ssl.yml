@@ -8,6 +8,7 @@
   when:
     - item.ssl | default(None) != None
     - item.ssl_crt is defined and item.ssl_crt | length > 0
+    - item.letsencrypt | default(None) == None
   no_log: true
   notify:
     - reload nginx
@@ -21,6 +22,7 @@
   when:
     - item.ssl | default(None) != None
     - item.ssl_crt is not defined or item.ssl_crt | length == 0
+    - item.letsencrypt | default(None) == None
   no_log: true
   notify:
     - reload nginx
@@ -34,6 +36,7 @@
   when:
     - item.ssl | default(None) != None
     - item.ssl_key is defined and item.ssl_key | length > 0
+    - item.letsencrypt | default(None) == None
   no_log: true
   notify:
     - reload nginx
@@ -46,7 +49,8 @@
   with_items: '{{ nginx_vhosts }}'
   when:
     - item.ssl | default(None) != None
-    - item.ssl_key is not defined and item.ssl_key | length == 0
+    - item.ssl_key | default('') | length == 0
+    - item.letsencrypt | default(None) == None
   no_log: true
   notify:
     - reload nginx
@@ -57,10 +61,11 @@
   register: nginx_unmanaged_files
   changed_when: false
   failed_when: false
+  when: nginx_vhosts | selectattr('ssl', 'defined') | rejectattr('letsencrypt', 'defined') | list | length > 0
 
 - name: Whitelist managed ssl certificates
   ansible.builtin.set_fact:
-    nginx_managed_files: "{{ nginx_vhosts | selectattr('ssl', 'defined') | map(attribute='ssl') | list | unique }}"
+    nginx_managed_files: "{{ nginx_vhosts | selectattr('ssl', 'defined') | rejectattr('letsencrypt', 'defined') | map(attribute='ssl') | list | unique }}"
 
 - name: Delete unmanaged ssl certificates
   ansible.builtin.file:
@@ -70,6 +75,8 @@
     - '{{ nginx_unmanaged_files.stdout_lines }}'
     - '.crt'
     - '.key'
-  when: item.0 not in nginx_managed_files and
+  when:
+    - not (nginx_unmanaged_files.skipped | default(false))
+    - item.0 not in nginx_managed_files
   notify:
     - reload nginx
