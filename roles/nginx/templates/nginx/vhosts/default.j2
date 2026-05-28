@@ -5,7 +5,7 @@ server {
     access_log off;
     error_log /dev/null emerg;
 
-    location '/.well-known/acme-challenge' { default_type "text/plain"; root /var/www; }
+    location '/.well-known/acme-challenge' { default_type "text/plain"; {{ 'root /var/www' if nginx_dehydrated is not defined else 'alias /var/lib/dehydrated/acme-challenges' }}; }
 
     location / {
     	root /var/www/default;

@@ -5,9 +5,9 @@
 {% if item.letsencrypt is defined %}
 {% set le_domain = item.name if item.letsencrypt is sameas true else item.letsencrypt %}
 {% if item.letsencrypt is sameas true %}
-    ssl_certificate /etc/letsencrypt/live/{{ le_domain }}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/{{ le_domain }}/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/{{ le_domain }}/fullchain.pem;
+    ssl_certificate {{ '/etc/letsencrypt/live' if nginx_dehydrated is not defined else '/var/lib/dehydrated/certs' }}/{{ le_domain }}/fullchain.pem;
+    ssl_certificate_key {{ '/etc/letsencrypt/live' if nginx_dehydrated is not defined else '/var/lib/dehydrated/certs' }}/{{ le_domain }}/privkey.pem;
+    ssl_trusted_certificate {{ '/etc/letsencrypt/live' if nginx_dehydrated is not defined else '/var/lib/dehydrated/certs' }}/{{ le_domain }}/fullchain.pem;
 {% else %}
     ssl_certificate /etc/nginx/ssl/{{ le_domain }}.crt;
     ssl_certificate_key /etc/nginx/ssl/{{ le_domain }}.key;
