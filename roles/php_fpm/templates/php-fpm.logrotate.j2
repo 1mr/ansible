@@ -1,10 +1,10 @@
-/var/log/php{{ php_ver }}-fpm/*.log {
-  rotate 30
+/var/log/php{{ php_fpm_ver }}-fpm/*.log {
+  rotate 14
   daily
   missingok
   notifempty
   compress
   delaycompress
-  postrotate /usr/lib/php/php{{ php_ver }}-fpm-reopenlogs
+  postrotate /usr/lib/php/php{{ php_fpm_ver }}-fpm-reopenlogs
   endscript
 }
