@@ -15,9 +15,16 @@
 
 - name: Ensure nginx modules directory exists
   ansible.builtin.file:
-    path: /etc/nginx/modules
+    path: /usr/lib/nginx/modules
     state: directory
     mode: '0755'
+  when: nginx_modules|default(None) != None
+
+- name: Symlink /etc/nginx/modules -> /usr/lib/nginx/modules
+  ansible.builtin.file:
+    src: /usr/lib/nginx/modules
+    dest: /etc/nginx/modules
+    state: link
   when: nginx_modules|default(None) != None
 
 - name: Download and extract nginx module
