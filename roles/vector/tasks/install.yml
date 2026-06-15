@@ -21,10 +21,9 @@
   notify: restart_vector
 
 - name: Check if docker group exists
-  ansible.builtin.getent:
-    database: group
-    key: docker
-  ignore_errors: true
+  ansible.builtin.command: getent group docker
+  failed_when: false
+  changed_when: false
   register: _vector_docker_group
 
 - name: Add vector to docker group
@@ -32,5 +31,5 @@
     name: vector
     groups: docker
     append: true
-  when: _vector_docker_group is not failed
+  when: _vector_docker_group.rc == 0
   notify: restart_vector

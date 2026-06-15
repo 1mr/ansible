@@ -7,7 +7,7 @@ server {
     server_name {{ item.name }}{% if item.aliases is defined %} {{ item.aliases }}{% endif %};
 {% if item.ssl is defined or item.letsencrypt is defined %}
 {% include 'templates/acme_challenge.j2' %}
-    return 301 https://$server_name$request_uri;
+    return 301 https://$host$request_uri;
 }
 
 server {

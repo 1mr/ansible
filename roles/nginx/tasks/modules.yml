@@ -13,6 +13,13 @@
          if nginx_version == 'latest' else nginx_version }}
   when: nginx_modules|default(None) != None
 
+- name: Ensure nginx modules directory exists
+  ansible.builtin.file:
+    path: /etc/nginx/modules
+    state: directory
+    mode: '0755'
+  when: nginx_modules|default(None) != None
+
 - name: Download and extract nginx module
   ansible.builtin.unarchive:
     src: 'https://github.com/1mr/nginx-modules/releases/download/nginx-{{ _nginx_version_resolved }}/{{ item }}-linux-{{ _nginx_arch }}.tar.gz'
