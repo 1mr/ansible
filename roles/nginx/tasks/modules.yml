@@ -13,6 +13,13 @@
          if nginx_version == 'latest' else nginx_version }}
   when: nginx_modules|default(None) != None
 
+- name: Ensure nginx directory exists
+  ansible.builtin.file:
+    path: /etc/nginx
+    state: directory
+    mode: '0755'
+  when: nginx_modules|default(None) != None
+
 - name: Ensure nginx modules directory exists
   ansible.builtin.file:
     path: /usr/lib/nginx/modules

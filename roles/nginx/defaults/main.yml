@@ -1,6 +1,6 @@
 ---
 nginx_branch: stable
-nginx_version: latest
+nginx_version: 1.30.3
 
 nginx_user: www-data
 nginx_worker_processes: auto

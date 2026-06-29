@@ -1,8 +1,9 @@
 ---
 - name: Install nginx
   ansible.builtin.apt:
-    name: nginx
-    state: '{{ nginx_version }}'
+    name: "{{ 'nginx' if nginx_version == 'latest' else 'nginx=' ~ nginx_version ~ '*' }}"
+    state: "{{ 'latest' if nginx_version == 'latest' else 'present' }}"
     update_cache: true
+    allow_downgrade: true
   notify:
     - restart nginx
