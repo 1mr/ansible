@@ -7,19 +7,33 @@ metrics:
       - datname
       - usename
       - state
+      - wait_event_type
     values:
       - total
     query_ref: pg_stat_activity
 
-  - metric_name: pg_db_stat_activity_oldest_timestamp_seconds
+  - metric_name: pg_db_stat_activity_max_tx_age_seconds
     type: gauge
     help: 'Age of the oldest transaction in seconds'
     key_labels:
       - datname
       - usename
       - state
+      - wait_event_type
     values:
-      - oldest_timestamp_seconds
+      - max_tx_age_seconds
+    query_ref: pg_stat_activity
+
+  - metric_name: pg_db_stat_activity_max_query_age_seconds
+    type: gauge
+    help: 'Age of the longest running query in seconds'
+    key_labels:
+      - datname
+      - usename
+      - state
+      - wait_event_type
+    values:
+      - max_query_age_seconds
     query_ref: pg_stat_activity
 
 queries:
@@ -29,11 +43,12 @@ queries:
         datname,
         usename,
         state,
-        COUNT(*) as total,
-        MAX(EXTRACT(EPOCH FROM clock_timestamp() - pg_stat_activity.xact_start)) AS oldest_timestamp_seconds
+        COALESCE(wait_event_type, 'On CPU') AS wait_event_type,
+        COUNT(*) AS total,
+        COALESCE(MAX(EXTRACT(EPOCH FROM clock_timestamp() - xact_start)), 0) AS max_tx_age_seconds,
+        COALESCE(MAX(EXTRACT(EPOCH FROM clock_timestamp() - query_start)), 0) AS max_query_age_seconds
       FROM pg_stat_activity
-      WHERE query NOT LIKE 'autovacuum:%'
-        -- AND state IS DISTINCT FROM 'idle'
-        -- AND pg_stat_activity.xact_start IS NOT NULL
+      WHERE backend_type = 'client backend'
+        AND pid <> pg_backend_pid()
         AND datname NOT IN ('postgres', 'template0', 'template1', 'cloudsqladmin')
-      GROUP BY datname, usename, state;
+      GROUP BY 1, 2, 3, 4;

@@ -166,6 +166,6 @@ queries:
         deadlocks,
         blk_read_time,
         blk_write_time,
-        stats_reset
+        EXTRACT(EPOCH FROM stats_reset) AS stats_reset
       FROM pg_stat_database
       WHERE datname NOT IN ('postgres', 'template0', 'template1','cloudsqladmin');
