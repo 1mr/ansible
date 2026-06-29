@@ -18,7 +18,7 @@
   ansible.builtin.template:
     src: main.cf.j2
     dest: /etc/postfix/main.cf
-  when: ansible_distribution_major_version < '9'
+  when: ansible_facts['distribution_major_version'] | int < 9
   notify:
     - Restart postfix
 
@@ -26,7 +26,7 @@
   ansible.builtin.template:
     src: master.cf.j2
     dest: /etc/postfix/master.cf
-  when: ansible_distribution_major_version < '9'
+  when: ansible_facts['distribution_major_version'] | int < 9
   notify:
     - Restart postfix
 
@@ -34,7 +34,7 @@
   ansible.builtin.template:
     src: main_3.x.cf.j2
     dest: /etc/postfix/main.cf
-  when: ansible_distribution_major_version >= '9'
+  when: ansible_facts['distribution_major_version'] | int >= 9
   notify:
     - Restart postfix
 
@@ -42,6 +42,6 @@
   ansible.builtin.template:
     src: master_3.x.cf.j2
     dest: /etc/postfix/master.cf
-  when: ansible_distribution_major_version >= '9'
+  when: ansible_facts['distribution_major_version'] | int >= 9
   notify:
     - Restart postfix
