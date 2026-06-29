@@ -1,0 +1,8 @@
+---
+clickhouse_user: 'clickhouse'
+clickhouse_group: 'clickhouse'
+
+# Configuration format: xml or yaml
+clickhouse_config_format: xml
+
+clickhouse_keeper_path_log: '/var/log/clickhouse-keeper'

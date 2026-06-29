@@ -1,0 +1,88 @@
+---
+clickhouse_version: 'latest'
+
+clickhouse_repo_key_url: 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key'
+clickhouse_repo_url: 'https://packages.clickhouse.com/deb'
+
+clickhouse_packages:
+  - clickhouse-server
+  - clickhouse-client
+  - clickhouse-common-static
+
+clickhouse_service_enabled: true
+clickhouse_service_state: started
+
+# ClickHouse network configuration
+clickhouse_http_port: 8123
+clickhouse_tcp_port: 9000
+clickhouse_interserver_http_port: 9009
+
+# ClickHouse directories
+clickhouse_path_base: /var/lib/clickhouse
+clickhouse_path_data: '{{ clickhouse_path_base }}'
+clickhouse_path_tmp: '{{ clickhouse_path_base }}/tmp'
+clickhouse_path_user_files: '{{ clickhouse_path_base }}/user_files'
+clickhouse_path_format_schema: '{{ clickhouse_path_base }}/format_schemas'
+clickhouse_path_log: /var/log/clickhouse-server
+clickhouse_path_config: /etc/clickhouse-server
+
+# Cluster configuration
+clickhouse_cluster_enabled: false
+
+clickhouse_clusters: {}
+
+# ClickHouse Keeper configuration
+clickhouse_keeper_enabled: false
+clickhouse_keeper_port: 9181
+clickhouse_keeper_raft_port: 9234
+clickhouse_keeper_path: /var/lib/clickhouse/coordination
+clickhouse_keeper_path_config: /etc/clickhouse-keeper
+clickhouse_keeper_enable_reconfiguration: true
+clickhouse_keeper_servers: []
+
+# ClickHouse Server configuration
+clickhouse_server_enabled: false
+
+clickhouse_listen_host: '127.0.0.1'
+clickhouse_advertise_host: '127.0.0.1'
+
+# Network restrictions for default user
+clickhouse_default_user_networks:
+  - '::1' # IPv6 localhost
+  - '127.0.0.1' # IPv4 localhost
+
+# Server configuration
+clickhouse_server_settings:
+  max_concurrent_queries: 1000
+  async_insert_threads: 16
+  background_pool_size: 16
+  max_connections: 4096
+
+# Logging configuration
+# Acceptable values: none, fatal, critical, error, warning, notice, information, debug, trace, test
+clickhouse_log_level: information
+
+# Database atomic delay before drop table (in seconds)
+# The delay during which a dropped table can be restored using the UNDROP statement
+clickhouse_database_atomic_delay_before_drop_table_sec: 480
+
+# Keeper scale mode - when true, prevents service restarts during config updates
+# Used for zero-downtime keeper scale out/in operations
+clickhouse_keeper_scale_mode: false
+
+clickhouse_prometheus:
+  port: 9363
+  endpoint: /metrics
+  metrics: true
+  asynchronous_metrics: true
+  events: true
+  errors: true
+  histograms: true
+  dimensional_metrics: true
+
+clickhouse_profiles:
+  default:
+    database_atomic_wait_for_drop_and_detach_synchronously: 1
+    log_processors_profiles: 1
+
+clickhouse_quotas: {}

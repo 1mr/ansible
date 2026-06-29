@@ -1,0 +1,15 @@
+---
+- name: Add APT repo
+  block:
+    - name: Clickhouse | apt key
+      ansible.builtin.get_url:
+        url: '{{ clickhouse_repo_key_url }}'
+        dest: /usr/share/keyrings/clickhouse-keyring.gpg
+        mode: '0644'
+
+    - name: Clickhouse | apt source
+      ansible.builtin.apt_repository:
+        repo: 'deb [arch=amd64 signed-by=/usr/share/keyrings/clickhouse-keyring.gpg] {{ clickhouse_repo_url }} stable main'
+        state: present
+        filename: clickhouse
+        update_cache: true

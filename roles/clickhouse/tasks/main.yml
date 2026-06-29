@@ -1,0 +1,47 @@
+---
+- name: Configure Apt
+  ansible.builtin.import_tasks: apt.yml
+  tags:
+    - apt
+    - clickhouse_apt
+
+- name: Install Clickhouse
+  ansible.builtin.import_tasks: install.yml
+  tags:
+    - clickhouse_install
+    - install
+
+- name: Configure Systemd
+  ansible.builtin.import_tasks: systemd.yml
+  tags:
+    - clickhouse_configure
+    - clickhouse_systemd
+    - install
+
+- name: Configure Server
+  ansible.builtin.import_tasks: server.yml
+  tags:
+    - clickhouse_configure
+    - clickhouse_server
+    - configure
+
+- name: Configure Cluster
+  ansible.builtin.import_tasks: cluster.yml
+  tags:
+    - clickhouse_configure
+    - clickhouse_cluster
+    - configure
+
+- name: Configure Keeper
+  ansible.builtin.import_tasks: keeper.yml
+  tags:
+    - clickhouse_configure
+    - clickhouse_keeper
+    - configure
+
+- name: Configure Users
+  ansible.builtin.import_tasks: users.yml
+  tags:
+    - clickhouse_configure
+    - clickhouse_users
+    - configure

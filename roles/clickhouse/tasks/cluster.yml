@@ -1,0 +1,21 @@
+---
+- name: Configure cluster
+  when:
+    - clickhouse_server_enabled | bool
+    - clickhouse_cluster_enabled | bool
+  block:
+    - name: Cluster | config cleanup
+      ansible.builtin.file:
+        path: '{{ clickhouse_path_config }}/config.d/cluster.{{ clickhouse_config_format }}'
+        state: absent
+      when: not clickhouse_cluster_enabled | bool
+
+    - name: Cluster | config
+      ansible.builtin.template:
+        src: 'config.d/cluster.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_path_config }}/config.d/cluster.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      notify: restart clickhouse-server

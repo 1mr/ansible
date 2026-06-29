@@ -1,0 +1,39 @@
+---
+- name: Systemd override
+  block:
+    - name: Server | systemd override directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/clickhouse-server.service.d
+        state: directory
+        mode: '0755'
+      when: clickhouse_server_enabled
+
+    - name: Keeper | systemd override directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/clickhouse-keeper.service.d
+        state: directory
+        mode: '0755'
+      when: clickhouse_keeper_enabled
+
+    - name: Server | systemd override
+      ansible.builtin.template:
+        src: systemd/server/{{ item }}.conf.j2
+        dest: /etc/systemd/system/clickhouse-server.service.d/{{ item }}.conf
+        mode: '0644'
+      with_items:
+        - malloc
+        - watchdog
+      notify:
+        - reload systemd
+        - restart clickhouse-server
+
+    - name: Keeper | systemd override
+      ansible.builtin.template:
+        src: systemd/keeper/{{ item }}.conf.j2
+        dest: /etc/systemd/system/clickhouse-keeper.service.d/{{ item }}.conf
+        mode: '0644'
+      with_items:
+        - malloc
+      notify:
+        - reload systemd
+        - restart clickhouse-keeper

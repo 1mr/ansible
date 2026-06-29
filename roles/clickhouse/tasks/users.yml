@@ -1,0 +1,44 @@
+---
+- name: Configure Users
+  block:
+    - name: User | default config
+      ansible.builtin.template:
+        src: 'users.d/default.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_path_config }}/users.d/default.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      when: clickhouse_server_enabled | bool
+      notify:
+        - restart clickhouse-server
+
+    - name: User | profiles config
+      ansible.builtin.template:
+        src: 'users.d/profile.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_path_config }}/users.d/profile.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      loop: '{{ clickhouse_profiles | flatten(1) }}'
+      when:
+        - clickhouse_server_enabled | bool
+        - clickhouse_profiles is defined
+      notify:
+        - restart clickhouse-server
+
+    - name: User | user config
+      ansible.builtin.template:
+        src: 'users.d/user.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_path_config }}/users.d/{{ item }}.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      loop: '{{ clickhouse_users | flatten(1) }}'
+      when:
+        - clickhouse_server_enabled | bool
+        - clickhouse_users is defined
+      notify:
+        - restart clickhouse-server

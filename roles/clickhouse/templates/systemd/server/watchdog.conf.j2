@@ -1,0 +1,10 @@
+[Service]
+PermissionsStartOnly=true
+TasksMax=16384
+Restart=always
+RestartPreventExitStatus={{ clickhouse_systemd_restart_prevent_exit_status | default("") }}
+TimeoutStopSec=infinity
+
+# We disable builtin watchdog (which monitors the clickhouse-server) since we
+# do monitor systemd unit's statuses.
+Environment=CLICKHOUSE_WATCHDOG_ENABLE=0 GWP_ASAN_OPTIONS="Enabled=false"

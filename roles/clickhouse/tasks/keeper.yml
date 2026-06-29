@@ -1,0 +1,32 @@
+---
+- name: Configure Keeper
+  block:
+    - name: Keeper | cleanup
+      ansible.builtin.file:
+        path: '{{ clickhouse_keeper_path_config }}/keeper_config.{{ clickhouse_config_format }}'
+        state: absent
+      when: not clickhouse_keeper_enabled
+
+    - name: Keeper | client config
+      ansible.builtin.template:
+        src: 'config.d/keeper.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_path_config }}/config.d/keeper.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      when:
+        - clickhouse_server_enabled | bool
+        - clickhouse_keeper_enabled | bool
+      notify: "{{ [] if clickhouse_keeper_scale_mode else ['restart clickhouse-server'] }}"
+
+    - name: Keeper | server config
+      ansible.builtin.template:
+        src: 'keeper_config.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_keeper_path_config }}/keeper_config.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      when: clickhouse_keeper_enabled | bool
+      notify: "{{ [] if clickhouse_keeper_scale_mode else ['restart clickhouse-keeper'] }}"

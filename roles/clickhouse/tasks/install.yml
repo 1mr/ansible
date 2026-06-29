@@ -1,0 +1,57 @@
+---
+- name: Install ClickHouse packages
+  ansible.builtin.apt:
+    name:
+      - "{{ item  }}{{ '' if clickhouse_version == 'latest' else '=' + clickhouse_version }}"
+    state: present
+    update_cache: true
+  with_items: '{{ clickhouse_packages }}'
+
+- name: Configure directories
+  block:
+    - name: Server | Ensure directories exist
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: 'clickhouse'
+        group: 'clickhouse'
+        mode: '0750'
+      loop:
+        - '{{ clickhouse_path_data }}'
+        - '{{ clickhouse_path_tmp }}'
+        - '{{ clickhouse_path_user_files }}'
+        - '{{ clickhouse_path_format_schema }}'
+        - '{{ clickhouse_path_config }}/config.d'
+        - '{{ clickhouse_path_config }}/users.d'
+      when: clickhouse_server_enabled | bool
+
+    - name: Keeper | Ensure directory exists
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: 'clickhouse'
+        group: 'clickhouse'
+        mode: '0750'
+      loop:
+        - '{{ clickhouse_keeper_path }}'
+        - '{{ clickhouse_keeper_path }}/logs'
+        - '{{ clickhouse_keeper_path }}/snapshots'
+      when: clickhouse_keeper_enabled | bool
+
+- name: Enable and start Clickhouse services
+  block:
+    - name: Keeper | Enable and start service
+      ansible.builtin.service:
+        name: clickhouse-keeper
+        enabled: '{{ clickhouse_service_enabled }}'
+        state: '{{ clickhouse_service_state }}'
+      when:
+        - clickhouse_keeper_enabled | bool
+        - not clickhouse_keeper_scale_mode
+
+    - name: Clickhouse | Enable and start service
+      ansible.builtin.service:
+        name: clickhouse-server
+        enabled: '{{ clickhouse_service_enabled }}'
+        state: '{{ clickhouse_service_state }}'
+      when: clickhouse_server_enabled | bool

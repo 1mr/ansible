@@ -1,0 +1,19 @@
+---
+- name: Configure ClickHouse
+  block:
+    - name: Configure | server
+      ansible.builtin.template:
+        src: 'config.d/{{ item }}.{{ clickhouse_config_format }}.j2'
+        dest: '{{ clickhouse_path_config }}/config.d/{{ item }}.{{ clickhouse_config_format }}'
+        owner: '{{ clickhouse_user }}'
+        group: '{{ clickhouse_group }}'
+        mode: '0640'
+        backup: false
+      loop:
+        - 'network'
+        - 'path'
+        - 'server'
+        - 'prometheus'
+      when: clickhouse_server_enabled | bool
+      notify:
+        - restart clickhouse-server
