@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# TeamCity files backup via the native maintainDB tool.
+# --basic backs up configs/plugins/supplementary data but NOT the database -
+# the database is covered separately by the postgres backup.
+teamcity_home="{{ item.home | default('/opt/teamcity') }}"
+teamcity_data_dir="{{ item.data_dir | default('/opt/teamcity/.BuildServer') }}"
+maintaindb_opts="{{ item.maintaindb_opts | default('--basic') }}"
+# maintainDB needs JAVA_HOME/JRE_HOME.
+java_home="{{ item.java_home | default('/usr/lib/jvm/java-21-openjdk-amd64') }}"
+
+backup_parent_dir="/data/backups/teamcity"
+backup_date=`date +%Y-%m-%d_%H-%M`
+backup_dir="${backup_parent_dir}/`date "+%Y-%m-%d"`"
+echo "Backup directory: ${backup_dir}"
+mkdir -p "${backup_dir}"
+chmod 755 "${backup_dir}"
+HOSTNAME=`hostname -f`
+
+# report backup status to victoriametrics
+VMAGENT_URL="http://127.0.0.1:8429"
+METRIC_LABELS="job=\"backup\",type=\"teamcity\",instance=\"${HOSTNAME}\""
+backup_start_time=`date +%s`
+backup_success=1   # 1 = success, 0 = failure
+
+push_metrics() {
+  [ "$?" -ne 0 ] && backup_success=0
+  backup_end_time=`date +%s`
+  backup_duration=$((backup_end_time - backup_start_time))
+
+  metrics="backup_success{${METRIC_LABELS}} ${backup_success}
+backup_duration_seconds{${METRIC_LABELS}} ${backup_duration}"
+  if [ "${backup_success}" -eq 1 ]; then
+    metrics="${metrics}
+backup_last_success_seconds{${METRIC_LABELS}} ${backup_end_time}"
+  fi
+
+  if curl -sf -o /dev/null --max-time 5 "${VMAGENT_URL}/health"; then
+    printf '%s\n' "${metrics}" | curl -s --max-time 10 --data-binary @- "${VMAGENT_URL}/api/v1/import/prometheus"
+  else
+    logger "vmagent not reachable at ${VMAGENT_URL}, skipping backup metrics"
+  fi
+}
+trap push_metrics EXIT
+
+# set DAYS
+if [ -n "$1" ]; then
+  DAYS=$1
+else
+  DAYS={{ item.retention | default("14") }}
+fi
+
+logger "*** Start teamcity Backup ***"
+
+maintaindb="${teamcity_home}/bin/maintainDB.sh"
+if [ ! -x "${maintaindb}" ]; then
+  logger "maintainDB not found or not executable at ${maintaindb}, aborting backup"
+  backup_success=0
+  exit 1
+fi
+
+if [ ! -x "${java_home}/bin/java" ]; then
+  logger "JAVA_HOME ${java_home} does not contain a valid JRE (bin/java missing), aborting backup"
+  backup_success=0
+  exit 1
+fi
+
+# -F takes a full path (without extension); maintainDB writes <name>.zip there.
+backup_file="${backup_dir}/teamcity_${backup_date}"
+JAVA_HOME="${java_home}" "${maintaindb}" backup --data-dir "${teamcity_data_dir}" ${maintaindb_opts} -F "${backup_file}" > /dev/null
+rc=$?
+if [ "${rc}" -ne 0 ]; then
+  backup_success=0
+  logger "maintainDB backup failed (exit ${rc})"
+  exit 1
+fi
+
+if [ -f "${backup_file}.zip" ]; then
+  chmod 600 "${backup_file}.zip"
+else
+  logger "expected backup file ${backup_file}.zip not found after maintainDB run"
+  backup_success=0
+  exit 1
+fi
+
+logger "*** Delete backups older than ${DAYS} days ***"
+
+# Delete backups older than ${DAYS}
+find ${backup_parent_dir} -name '*' -type d -mtime +${DAYS} -prune -exec rm -rfv "{}" \;
+
+logger "*** Finish teamcity Backup ***"

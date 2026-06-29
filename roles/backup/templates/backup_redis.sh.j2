@@ -1,0 +1,107 @@
+#!/bin/bash
+set -o pipefail
+
+backup_parent_dir="/data/backups/redis"
+backup_date=`date +%Y-%m-%d`
+backup_dir="${backup_parent_dir}/${backup_date}"
+echo "Backup directory: ${backup_dir}"
+mkdir -p "${backup_dir}"
+chmod 755 "${backup_dir}"
+HOSTNAME=`hostname -f`
+
+# report backup status to victoriametrics
+VMAGENT_URL="http://127.0.0.1:8429"
+METRIC_LABELS="job=\"backup\",type=\"redis\",instance=\"${HOSTNAME}\""
+backup_start_time=`date +%s`
+backup_success=1   # 1 = success, 0 = failure
+
+push_metrics() {
+  [ "$?" -ne 0 ] && backup_success=0
+  backup_end_time=`date +%s`
+  backup_duration=$((backup_end_time - backup_start_time))
+
+  metrics="backup_success{${METRIC_LABELS}} ${backup_success}
+backup_duration_seconds{${METRIC_LABELS}} ${backup_duration}"
+  if [ "${backup_success}" -eq 1 ]; then
+    metrics="${metrics}
+backup_last_success_seconds{${METRIC_LABELS}} ${backup_end_time}"
+  fi
+
+  if curl -sf -o /dev/null --max-time 5 "${VMAGENT_URL}/health"; then
+    printf '%s\n' "${metrics}" | curl -s --max-time 10 --data-binary @- "${VMAGENT_URL}/api/v1/import/prometheus"
+  else
+    logger "vmagent not reachable at ${VMAGENT_URL}, skipping backup metrics"
+  fi
+}
+trap push_metrics EXIT
+
+REDIS_CONN=(-h "{{ item.host | default('127.0.0.1') }}" -p "{{ item.port | default('6379') }}")
+{% if item.username is defined %}
+REDIS_CONN+=(--user "{{ item.username }}")
+{% endif %}
+{% if item.password is defined %}
+# pass the password via env so it is not exposed in the process list
+export REDISCLI_AUTH="{{ item.password }}"
+{% endif %}
+
+# set DAYS
+if [ -n "$1" ]; then
+  DAYS=$1
+else
+  DAYS={{ item.retention | default("14") }}
+fi
+
+logger "*** Start Redis Backup ***"
+
+# fail fast on connectivity / auth problems
+if [ "`redis-cli "${REDIS_CONN[@]}" PING 2>&1`" != "PONG" ]; then
+  logger "Redis not reachable or authentication failed, aborting backup"
+  backup_success=0
+  exit 1
+fi
+
+bkp_date=`date '+%F_%H-%M'`
+archive="${backup_dir}/${HOSTNAME}_redis_${bkp_date}.rdb.gz"
+
+{% if item.method | default('bgsave') == 'rdb' %}
+# stream a fresh RDB snapshot over the wire (triggers a full SYNC, works remotely)
+echo "Creating compressed Redis RDB snapshot via --rdb"
+redis-cli "${REDIS_CONN[@]}" --rdb - | pigz > "${archive}" || backup_success=0
+chmod 600 "${archive}"
+{% else %}
+# trigger a background save and copy the resulting dump.rdb (lighter on the server)
+echo "Triggering BGSAVE"
+prev_save=`redis-cli "${REDIS_CONN[@]}" LASTSAVE`
+redis-cli "${REDIS_CONN[@]}" BGSAVE
+
+# wait until the save completes (LASTSAVE advances), up to ~5 min
+saved=0
+for _ in $(seq 1 300); do
+  cur_save=`redis-cli "${REDIS_CONN[@]}" LASTSAVE`
+  if [ "${cur_save}" != "${prev_save}" ]; then
+    saved=1
+    break
+  fi
+  sleep 1
+done
+
+status=`redis-cli "${REDIS_CONN[@]}" INFO persistence | tr -d '\r' | sed -n 's/^rdb_last_bgsave_status://p'`
+if [ "${saved}" -ne 1 ] || [ "${status}" != "ok" ]; then
+  logger "Redis BGSAVE did not complete successfully (saved=${saved}, status=${status})"
+  backup_success=0
+fi
+
+# locate the on-disk dump and compress it
+rdb_dir=`redis-cli "${REDIS_CONN[@]}" CONFIG GET dir | tr -d '\r' | sed -n 2p`
+rdb_file=`redis-cli "${REDIS_CONN[@]}" CONFIG GET dbfilename | tr -d '\r' | sed -n 2p`
+echo "Copying ${rdb_dir}/${rdb_file}"
+pigz -c "${rdb_dir}/${rdb_file}" > "${archive}" || backup_success=0
+chmod 600 "${archive}"
+{% endif %}
+
+logger "*** Delete Redis backups older than ${DAYS} days ***"
+
+# Delete backups older than ${DAYS}
+find ${backup_parent_dir} -name '*' -type d -mtime +${DAYS} -prune -exec rm -rfv "{}" \;
+
+logger "*** Finish Redis Backup ***"

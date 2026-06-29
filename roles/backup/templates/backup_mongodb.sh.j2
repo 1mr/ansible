@@ -1,0 +1,94 @@
+#!/bin/bash
+set -euo pipefail
+
+backup_parent_dir="/data/backups/mongodb"
+backup_date=`date +%Y-%m-%d`
+backup_dir="${backup_parent_dir}/${backup_date}"
+echo "Backup directory: ${backup_dir}"
+mkdir -p "${backup_dir}"
+chmod 755 "${backup_dir}"
+HOSTNAME=`hostname -f`
+
+# report backup status to victoriametrics
+VMAGENT_URL="http://127.0.0.1:8429"
+METRIC_LABELS="job=\"backup\",type=\"mongodb\",instance=\"${HOSTNAME}\""
+backup_start_time=`date +%s`
+backup_success=1   # 1 = success, 0 = failure
+
+push_metrics() {
+  [ "$?" -ne 0 ] && backup_success=0
+  backup_end_time=`date +%s`
+  backup_duration=$((backup_end_time - backup_start_time))
+
+  metrics="backup_success{${METRIC_LABELS}} ${backup_success}
+backup_duration_seconds{${METRIC_LABELS}} ${backup_duration}"
+  if [ "${backup_success}" -eq 1 ]; then
+    metrics="${metrics}
+backup_last_success_seconds{${METRIC_LABELS}} ${backup_end_time}"
+  fi
+
+  if curl -sf -o /dev/null --max-time 5 "${VMAGENT_URL}/health"; then
+    printf '%s\n' "${metrics}" | curl -s --max-time 10 --data-binary @- "${VMAGENT_URL}/api/v1/import/prometheus"
+  else
+    logger "vmagent not reachable at ${VMAGENT_URL}, skipping backup metrics"
+  fi
+}
+trap push_metrics EXIT
+
+{% if item.uri is defined %}
+MONGOSH_CONN=("{{ item.uri }}")
+# mongodump rejects --db when the URI path also names a database, so strip the
+# path db and keep it as authSource (where it belongs) for the per-db dumps.
+_uri="{{ item.uri }}"
+_scheme="${_uri%%://*}"
+_rest="${_uri#*://}"
+_authority="${_rest%%/*}"
+_pathquery="${_rest#"${_authority}"}"; _pathquery="${_pathquery#/}"
+_pathdb="${_pathquery%%\?*}"
+_query="${_pathquery#"${_pathdb}"}"
+if [ -n "${_pathdb}" ] && [ "${_query#*authSource=}" = "${_query}" ]; then
+  [ -n "${_query}" ] && _query="${_query}&authSource=${_pathdb}" || _query="?authSource=${_pathdb}"
+fi
+MONGODUMP_CONN=(--uri="${_scheme}://${_authority}/${_query}")
+{% else %}
+MONGOSH_CONN=(--host="{{ item.host | default('127.0.0.1') }}" --port="{{ item.port | default('27017') }}")
+{% if item.username is defined %}
+MONGOSH_CONN+=(--username="{{ item.username }}" --password="{{ item.password }}"{% if item.auth_db is defined %} --authenticationDatabase="{{ item.auth_db }}"{% endif %})
+{% endif %}
+MONGODUMP_CONN=("${MONGOSH_CONN[@]}")
+{% endif %}
+MONGO_SKIP_DB="{{ item.skip_dbs | default('admin local config') }}"
+
+# set DAYS
+if [ -n "${1:-}" ]; then
+  DAYS=$1
+else
+  DAYS={{ item.retention | default("14") }}
+fi
+
+logger "*** Start MongoDB Backup ***"
+
+# list databases, excluding the ones in MONGO_SKIP_DB
+mongo_databases=$(MONGO_SKIP_DB="${MONGO_SKIP_DB}" mongosh "${MONGOSH_CONN[@]}" --quiet --eval '
+  const skip = (process.env.MONGO_SKIP_DB || "").split(/\s+/);
+  db.adminCommand("listDatabases").databases
+    .map(d => d.name)
+    .filter(n => !skip.includes(n))
+    .join("\n")')
+
+# Backup and compress each database
+for db in $mongo_databases
+do
+  echo "Creating backup of \"${db}\" database"
+  bkp_date=`date '+%F_%H-%M'`
+  archive="${backup_dir}/${HOSTNAME}_${db}_${bkp_date}.archive.gz"
+  mongodump "${MONGODUMP_CONN[@]}" --db="${db}" --gzip --archive="${archive}"
+  chmod 600 "${archive}"
+done
+
+logger "*** Delete MongoDB backups older than ${DAYS} days ***"
+
+# Delete backups older than ${DAYS}
+find ${backup_parent_dir} -name '*' -type d -mtime +${DAYS} -prune -exec rm -rfv "{}" \;
+
+logger "*** Finish MongoDB Backup ***"

@@ -6,7 +6,33 @@ backup_dir="${backup_parent_dir}/`date "+%Y-%m-%d"`"
 echo "Backup directory: ${backup_dir}"
 mkdir -p "${backup_dir}"
 chmod 755 "${backup_dir}"
-HOSTNAME=`hostname`
+HOSTNAME=`hostname -f`
+
+# report backup status to victoriametrics
+VMAGENT_URL="http://127.0.0.1:8429"
+METRIC_LABELS="job=\"backup\",type=\"sites\",instance=\"${HOSTNAME}\""
+backup_start_time=`date +%s`
+backup_success=1   # 1 = success, 0 = failure
+
+push_metrics() {
+  [ "$?" -ne 0 ] && backup_success=0
+  backup_end_time=`date +%s`
+  backup_duration=$((backup_end_time - backup_start_time))
+
+  metrics="backup_success{${METRIC_LABELS}} ${backup_success}
+backup_duration_seconds{${METRIC_LABELS}} ${backup_duration}"
+  if [ "${backup_success}" -eq 1 ]; then
+    metrics="${metrics}
+backup_last_success_seconds{${METRIC_LABELS}} ${backup_end_time}"
+  fi
+
+  if curl -sf -o /dev/null --max-time 5 "${VMAGENT_URL}/health"; then
+    printf '%s\n' "${metrics}" | curl -s --max-time 10 --data-binary @- "${VMAGENT_URL}/api/v1/import/prometheus"
+  else
+    logger "vmagent not reachable at ${VMAGENT_URL}, skipping backup metrics"
+  fi
+}
+trap push_metrics EXIT
 
 # set DAYS
 if [ -n "$1" ]; then
@@ -24,7 +50,19 @@ for sites_root_dir in /usr/sites /var/www; do
     if [ -d $sites_root_dir ]; then
         cd ${sites_root_dir} && sites_sub_dir=`echo $sites_root_dir | cut -f3 -d '/'`
         for i in `ls -d */ | cut -f1 -d'/'`; do
-            tar -c --exclude-vcs --exclude-backups --exclude-caches --exclude='*.sock' --exclude='*.log' -I pigz -f "${backup_dir}/${HOSTNAME}_${sites_sub_dir}_${i}_${backup_date}.tgz" -C $sites_root_dir $i
+            tar -c --warning=no-file-changed --exclude-vcs --exclude-backups --exclude-caches \
+                --exclude='*.sock' --exclude='*.log' \
+                --exclude='*/wp-content/cache' --exclude='*/wp-content/uploads/cache' \
+                --exclude='*/wp-content/wflogs' --exclude='*/wp-content/w3tc-config' \
+                --exclude='*/wp-content/et-cache' --exclude='*/wp-content/upgrade' \
+                --exclude='*/sessions' \
+                -I pigz -f "${backup_dir}/${HOSTNAME}_${sites_sub_dir}_${i}_${backup_date}.tgz" -C $sites_root_dir $i
+            # tar exit 1 = "file changed as we read it" (non-fatal, archive still valid); exit >=2 = real failure
+            tar_rc=$?
+            if [ "${tar_rc}" -ge 2 ]; then
+                backup_success=0
+                logger "tar failed for ${i} (exit ${tar_rc})"
+            fi
             chmod 600 "${backup_dir}/${HOSTNAME}_${sites_sub_dir}_${i}_${backup_date}.tgz"
         done
     fi

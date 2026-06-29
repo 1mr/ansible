@@ -1,0 +1,79 @@
+#!/bin/bash
+set -euo pipefail
+
+GCS_BUCKET={{ item.bucket }}
+{% if item.gcs_key is defined %}
+GCS_KEY={{ item.gcs_key }}
+{% endif %}
+BKP_PATH=({{ item.sync_bkp | default('"etc"') }})
+
+backup_base_dir="/data/backups"
+backup_date=`date +%Y-%m-%d`
+HOSTNAME=`hostname -f`
+
+# report backup status to victoriametrics
+VMAGENT_URL="http://127.0.0.1:8429"
+METRIC_LABELS="job=\"backup\",type=\"gcs\",instance=\"${HOSTNAME}\""
+backup_start_time=`date +%s`
+backup_success=1   # 1 = success, 0 = failure
+
+push_metrics() {
+  [ "$?" -ne 0 ] && backup_success=0
+  backup_end_time=`date +%s`
+  backup_duration=$((backup_end_time - backup_start_time))
+
+  metrics="backup_success{${METRIC_LABELS}} ${backup_success}
+backup_duration_seconds{${METRIC_LABELS}} ${backup_duration}"
+  if [ "${backup_success}" -eq 1 ]; then
+    metrics="${metrics}
+backup_last_success_seconds{${METRIC_LABELS}} ${backup_end_time}"
+  fi
+
+  if curl -sf -o /dev/null --max-time 5 "${VMAGENT_URL}/health"; then
+    printf '%s\n' "${metrics}" | curl -s --max-time 10 --data-binary @- "${VMAGENT_URL}/api/v1/import/prometheus"
+  else
+    logger "vmagent not reachable at ${VMAGENT_URL}, skipping backup metrics"
+  fi
+}
+trap push_metrics EXIT
+
+# rotation window
+if [ -n "${1:-}" ]; then
+  DAYS=$1
+else
+  DAYS={{ item.retention | default("0") }}
+fi
+DAYS_DATE=$(date +%F -d "${DAYS} days ago")
+
+logger "*** Start sync (google cloud storage) ***"
+
+{% if item.gcs_key is defined %}
+# authenticate with the dedicated service account
+gcloud auth activate-service-account --key-file="${GCS_KEY}" --quiet
+{% endif %}
+
+for i in "${BKP_PATH[@]}"; do
+  echo "gcloud storage rsync ${backup_base_dir}/${i}/${backup_date}..."
+  gcloud storage rsync --recursive \
+    "${backup_base_dir}/${i}/${backup_date}/" \
+    "gs://${GCS_BUCKET}/${HOSTNAME}/${i}/${backup_date}/"
+done >> /var/log/gcs_backup.log 2>&1
+
+if [ "${DAYS}" = "0" ]; then
+  echo "rotation disabled (retention=0), keeping all backups"
+else
+  echo "checking rotation cleanup"
+  for i in "${BKP_PATH[@]}"; do
+    echo "checking ${i} folder..."
+    for p in $(gcloud storage ls "gs://${GCS_BUCKET}/${HOSTNAME}/${i}/" 2>/dev/null || true); do
+      # p looks like gs://bucket/host/etc/2026-06-28/ ; extract the date folder name
+      folder=$(basename "${p%/}")
+      if [[ $folder < $DAYS_DATE ]]; then
+        echo "removing: ${p}"
+        gcloud storage rm --recursive --quiet "${p}"
+      fi
+    done
+  done
+fi
+
+logger "*** Finish sync (google cloud storage) ***"

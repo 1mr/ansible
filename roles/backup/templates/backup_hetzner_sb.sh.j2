@@ -7,12 +7,39 @@ BKP_PATH=({{ item.sync_bkp | default('"etc"') }})
 
 backup_base_dir="/data/backups"
 backup_date=`date +%Y-%m-%d`
+HOSTNAME=`hostname -f`
+
+# report backup status to victoriametrics
+VMAGENT_URL="http://127.0.0.1:8429"
+METRIC_LABELS="job=\"backup\",type=\"hetzner_sb\",instance=\"${HOSTNAME}\""
+backup_start_time=`date +%s`
+backup_success=1   # 1 = success, 0 = failure
+
+push_metrics() {
+  [ "$?" -ne 0 ] && backup_success=0
+  backup_end_time=`date +%s`
+  backup_duration=$((backup_end_time - backup_start_time))
+
+  metrics="backup_success{${METRIC_LABELS}} ${backup_success}
+backup_duration_seconds{${METRIC_LABELS}} ${backup_duration}"
+  if [ "${backup_success}" -eq 1 ]; then
+    metrics="${metrics}
+backup_last_success_seconds{${METRIC_LABELS}} ${backup_end_time}"
+  fi
+
+  if curl -sf -o /dev/null --max-time 5 "${VMAGENT_URL}/health"; then
+    printf '%s\n' "${metrics}" | curl -s --max-time 10 --data-binary @- "${VMAGENT_URL}/api/v1/import/prometheus"
+  else
+    logger "vmagent not reachable at ${VMAGENT_URL}, skipping backup metrics"
+  fi
+}
+trap push_metrics EXIT
 
 logger "*** Start Rsync (hetzner storage box) ***"
 
 for i in "${BKP_PATH[@]}"; do
   echo "rsync ${backup_base_dir}/${i}/${backup_date}..."
-  rsync -av --stats --mkpath -e "ssh -T -o Compression=no -x -p $SB_PORT -i $HOME/.ssh/${SB}.pem" ${backup_base_dir}/${i}/${backup_date}/ ${SB_USERNAME}@${SB}:${i}/${backup_date}/ > /var/log/rsync.log
+  rsync -av --stats --mkpath -e "ssh -T -o Compression=no -x -p $SB_PORT -i $HOME/.ssh/${SB}.pem" ${backup_base_dir}/${i}/${backup_date}/ ${SB_USERNAME}@${SB}:${i}/${backup_date}/ > /var/log/rsync.log || backup_success=0
 done
 
 
